@@ -64,9 +64,15 @@ while ($acnames = pg_fetch_row($rohs))
 {
 	$acname = $acnames[0];
 	$res = pg_query("SELECT
-		id,gid,name,artist,attributes,language,script
+		album.id,album.gid,album.name,album.artist,album.attributes,
+		language.name as language,
+		script.name as script,
+		album_amazon_asin.asin
 		FROM album
-		WHERE name LIKE '" . pg_escape_string($acname) . " (disc %'
+		JOIN script ON album.script=script.id
+		JOIN language ON album.language=language.id
+		LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
+		WHERE album.name LIKE '" . pg_escape_string($acname) . " (disc %'
 	");
 
 	if (!pg_num_rows($res))
@@ -109,7 +115,7 @@ while ($acnames = pg_fetch_row($rohs))
 		if ($rel1 != $rel2)
 			$violations[] = link_for($det) . "'s release-info ( " . reldates_string($rel1) . ") mismatches with " . link_for($prev) . ' ( ' . reldates_string($rel2) . ')';
 
-		foreach (array('artist', 'attributes', 'language', 'script') as $key)
+		foreach (array('artist', 'attributes', 'language', 'script', 'asin') as $key)
 			check_equal($violations, $key, $det, $prev);
 
 
