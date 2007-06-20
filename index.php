@@ -45,7 +45,12 @@ if ($page > 0)
 
 echo '<a href="?page=' . ($page+1) . '">next page --&gt;</a>';
 
-$rohs = pg_query("SELECT DISTINCT substr(name, 0, strpos(name, ' (disc')) as name from album where name like '% (disc%' LIMIT 100 OFFSET " . ($page*100));
+	$rohs = pg_query("
+		SELECT DISTINCT 
+		SUBSTR(name, 0, STRPOS(name, ' (disc')) AS name
+		FROM album 
+		WHERE name LIKE '% (disc%' LIMIT 100 OFFSET " . ($page*100)
+	);
 
 function check_equal(&$violations, $key, $left, $right)
 {
@@ -58,9 +63,11 @@ $boxes = $total = 0;
 while ($acnames = pg_fetch_row($rohs))
 {
 	$acname = $acnames[0];
-	$likebit = "'" . pg_escape_string($acname) . " (disc %'";
-	$sql = "SELECT * FROM album WHERE name LIKE " . $likebit;
-	$res = pg_query($sql);
+	$res = pg_query("SELECT 
+		id,gid,name,artist,attributes,language,script 
+		FROM album 
+		WHERE name LIKE '" . pg_escape_string($acname) . " (disc %'
+	");
 
 	if (!pg_num_rows($res))
 	{
@@ -75,7 +82,13 @@ while ($acnames = pg_fetch_row($rohs))
 		$ids[] = $row['id'];
 	}
 		
-	$res = pg_query("SELECT album,isocode as country,releasedate,label,catno,barcode,format FROM release JOIN country ON (country.id = release.country) WHERE album IN (" . implode(",", $ids) . ")");
+	$res = pg_query("SELECT 
+		album,isocode as country,releasedate,label,catno,barcode,format 
+		FROM release 
+		JOIN country ON (country.id = release.country) 
+		WHERE album IN (" . implode(",", $ids) . ")
+	");
+
 	$releasedates = array();
 	while ($row = pg_fetch_assoc($res))
 	{
