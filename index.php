@@ -11,6 +11,18 @@ $start = time();
 
 pg_connect('host=192.168.1.4 user=postgres dbname=musicbrainz_db password=poines69');
 
+function missing()
+{
+	return '{{missing}}';
+}
+
+function if_not_missing($var)
+{
+	if ($var)
+		return $var;
+	return missing();
+}
+
 function link_for($det)
 {
 	return "<a href=\"http://musicbrainz.org/album/{$det['gid']}.html\">{$det['name']}</a>";
@@ -20,7 +32,7 @@ function reldates_string($relds)
 {
 	$s = '';
 	if (!$relds)
-		return '{{missing}}';
+		return missing();
 	foreach ($relds as $reld)
 		$s .= "{$reld['country']} {$reld['releasedate']} <b>{$reld['label']} {$reld['catno']}</b> {$reld['barcode']} <b>{$reld['format']}</b>";
 	return $s;
@@ -38,7 +50,7 @@ $rohs = pg_query("SELECT DISTINCT substr(name, 0, strpos(name, ' (disc')) as nam
 function check_equal(&$violations, $key, $left, $right)
 {
 	if ($left[$key] != $right[$key])
-		$violations[] = link_for($left) . "'s $key ( " . $left[$key] . " ) mismatches with " . link_for($right) . ' ( ' . $right[$key] . ' )';
+		$violations[] = link_for($left) . "'s $key ( " . if_not_missing($left[$key]) . " ) mismatches with " . link_for($right) . ' ( ' . if_not_missing($right[$key]) . ' )';
 }
 
 $boxes = $total = 0;
