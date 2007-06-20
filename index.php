@@ -46,9 +46,9 @@ if ($page > 0)
 echo '<a href="?page=' . ($page+1) . '">next page --&gt;</a>';
 
 	$rohs = pg_query("
-		SELECT DISTINCT 
+		SELECT DISTINCT
 		SUBSTR(name, 0, STRPOS(name, ' (disc')) AS name
-		FROM album 
+		FROM album
 		WHERE name LIKE '% (disc%' LIMIT 100 OFFSET " . ($page*100)
 	);
 
@@ -63,9 +63,9 @@ $boxes = $total = 0;
 while ($acnames = pg_fetch_row($rohs))
 {
 	$acname = $acnames[0];
-	$res = pg_query("SELECT 
-		id,gid,name,artist,attributes,language,script 
-		FROM album 
+	$res = pg_query("SELECT
+		id,gid,name,artist,attributes,language,script
+		FROM album
 		WHERE name LIKE '" . pg_escape_string($acname) . " (disc %'
 	");
 
@@ -75,17 +75,17 @@ while ($acnames = pg_fetch_row($rohs))
 		continue;
 	}
 	$ids = $rawk = array();
-	
+
 	while ($row = pg_fetch_assoc($res))
 	{
 		$rawk[] = $row;
 		$ids[] = $row['id'];
 	}
-		
-	$res = pg_query("SELECT 
-		album,isocode as country,releasedate,label,catno,barcode,format 
-		FROM release 
-		JOIN country ON (country.id = release.country) 
+
+	$res = pg_query("SELECT
+		album,isocode as country,releasedate,label,catno,barcode,format
+		FROM release
+		JOIN country ON (country.id = release.country)
 		WHERE album IN (" . implode(",", $ids) . ")
 	");
 
@@ -115,9 +115,9 @@ while ($acnames = pg_fetch_row($rohs))
 
 		$prev = $det;
 	}
-	
+
 	$prev = $det = null;
-	
+
 	if ($violations)
 	{
 		$total+=count($violations);
