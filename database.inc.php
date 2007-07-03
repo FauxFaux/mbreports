@@ -1,6 +1,6 @@
 <?php
 
-pg_connect('host=192.168.1.3 user=postgres dbname=musicbrainz_db password=ponies69');
+pg_connect('host=192.168.1.3 user=musicbrainz_user dbname=musicbrainz_db');
 
 $desc = array('artistnotype.php' => 'Artists with no type',
 	'barcodes999.php' => '13 digit barcodes starting with 99',
@@ -8,7 +8,10 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'index.php' => 'This page',
 	'mergeproblems.php' => 'Releases where information on (disc 2) does not match (disc 1) and etc.',
 	'sillybarcodes.php' => 'Barcodes matching /^0?0946[0-9]{8}$/ (don\'t ask)',
-	'upcnoasin.php' => 'Releases with an UPC but not an ASIN'
+	'upcnoasin.php' => 'Releases with an UPC but not an ASIN',
+	'badasins.php' => '"Bad" amazon asin links',
+	'badurltypes.php' => 'Bad url types',
+	'missingdiscs.php' => 'Releases with possibly missing discs',
 	);
 
 function my_desc()
@@ -28,7 +31,7 @@ function my_title()
 <title><?=my_desc()?></title>
 </head>
 <body>
-<h1><?=my_desc()?></h1>
+<h1><?=my_desc()?> (dynamically generated around <?=@date("ga, l jS M Y")?>)</h1>
 <?
 }
 

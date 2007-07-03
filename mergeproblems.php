@@ -31,16 +31,19 @@ function reldates_string($relds)
 
 @$page = (int)$_GET{'page'};
 
+$per_page = 200;
+
 if ($page > 0)
 	echo '<a href="?page=' . ($page-1) . '">&lt;-- previous page</a> ';
 
 	echo '<a href="?page=' . ($page+1) . '">next page --&gt;</a>';
 
 	$rohs = pg_query("
-		SELECT DISTINCT
-		SUBSTR(name, 0, STRPOS(name, ' (disc')) AS name
-		FROM album
-		WHERE name LIKE '% (disc%' LIMIT 200 OFFSET " . ($page*200)
+		SELECT * FROM mergeables
+		WHERE ARRAY_DIMS(arr)!='[1:1]'
+		ORDER BY name
+		LIMIT $per_page OFFSET " . ($page*$per_page) . "
+		"
 	);
 
 function check_equal(&$violations, $key, $left, $right)
@@ -51,9 +54,10 @@ function check_equal(&$violations, $key, $left, $right)
 
 $boxes = $total = 0;
 
-while ($acnames = pg_fetch_row($rohs))
+while ($acnames = pg_fetch_assoc($rohs))
 {
-	$acname = $acnames[0];
+	$acname = $acnames['name'];
+	$ids = trim($acnames['arr'], '{}');
 	$res = pg_query("SELECT
 		album.id,album.gid,album.name,album.artist,album.attributes,
 		language.name as language,
@@ -63,7 +67,7 @@ while ($acnames = pg_fetch_row($rohs))
 		JOIN script ON album.script=script.id
 		JOIN language ON album.language=language.id
 		LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
-		WHERE album.name LIKE '" . pg_escape_string($acname) . " (disc %'
+		WHERE album.id IN ($ids)
 	");
 
 	if (!pg_num_rows($res))
