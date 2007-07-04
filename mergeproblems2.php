@@ -15,6 +15,15 @@ CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album
 
 require_once('database.inc.php');
 my_title();
+?>
+<style type="text/css">
+	body { background-color: white; color: black }
+	.bore { color: grey }
+	.diff { color: red }
+	th,tr.dr td { border: 1px solid black; padding: .4em }
+	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
+</style>
+<?
 
 function missing()
 {
@@ -23,14 +32,9 @@ function missing()
 
 function if_not_missing($var)
 {
-	if ($var)
+	if (trim($var))
 		return $var;
 	return missing();
-}
-
-function link_for($det)
-{
-	return "<a href=\"http://musicbrainz.org/show/release/?releaseid={$det['id']}\">{$det['name']}</a>";
 }
 
 function reldates_string($relds)
@@ -55,6 +59,7 @@ echo '<a href="?page=' . ($page+1) . '">next page --&gt;</a>';
 
 $rohs = pg_query("
 	SELECT * FROM mergeproblems_full
+	ORDER BY grouper,name
 	LIMIT " . ($per_page+$offset*2) . " OFFSET " . ($page*$per_page - $offset) . "
 	"
 );
@@ -71,8 +76,53 @@ $dat = array();
 
 while ($row = pg_fetch_assoc($rohs))
 {
-	@$dat[$row['grouper']][] = $row;
+	;
+	@$dat[$row['grouper']][$row['id']] = $row;
 	@$dat[$row['grouper']]['ids'][] = $row['id'];
+}
+
+function check_all_same($start, array $arr)
+{
+	$start['id'] = $start['name'] = '';
+	foreach ($arr as $bits)
+	{
+		$bits['id'] = $bits['name'] = '';
+		if ($bits != $start)
+			return false;
+	}
+	return true;
+
+}
+
+$span = 7;
+
+?>
+<hr/>
+<table><tr><th>disc</th><th>Artist</th><th>Attributes</th><th>Language</th><th>Script</th><th>ASIN</th><th>Release events</th></tr>
+<?
+
+
+function comparisoni($compare_to, $what)
+{
+	return (if_not_missing($compare_to) == if_not_missing($what) ? 'bore">' : 'diff">') . if_not_missing($what);
+}
+
+function comparison($compare_to, $what, $key)
+{
+	return comparisoni($compare_to[$key], $what[$key]);
+}
+
+function line_for($compare_to, $what)
+{
+	global $skip;
+	echo '<tr class="dr"><td><a href="http://musicbrainz.org/show/release/?releaseid=' . $what['id'] . '">' . substr($what['name'], $skip) . '</a></td>' .
+		'<td class="' . comparison($compare_to, $what, 'artist') . '</td>' .
+		'<td class="' . comparison($compare_to, $what, 'attributes') . '</td>' .
+		'<td class="' . comparison($compare_to, $what, 'language') . '</td>' .
+		'<td class="' . comparison($compare_to, $what, 'script') . '</td>' .
+		'<td class="' . comparison($compare_to, $what, 'asin') . '</td>' .
+		'<td class="' . @comparisoni(reldates_string($compare_to['releasedate']), reldates_string($what['releasedate'])) . '</td>' .
+		'</tr>';
 }
 
 foreach ($dat as $acname => $albs)
@@ -90,6 +140,7 @@ foreach ($dat as $acname => $albs)
 		FROM release
 		JOIN country ON (country.id = release.country)
 		WHERE album IN (" . implode(",", $ids) . ")
+		ORDER BY album,isocode,releasedate,label,catno,barcode,format
 	");
 
 	$releasedates = array();
@@ -98,42 +149,32 @@ foreach ($dat as $acname => $albs)
 	{
 		$alb = $row['album'];
 		unset($row['album']);
-		$releasedates[$alb][] = $row;
+		$albs[$alb]['releasedate'][] = $row;
 	}
 
-	//var_dump($releasedates);
 
-	$violations = array();
 	unset($albs['ids']);
-	$rawk = $albs;
 
+	reset($albs);
+	$starid = key($albs);
+	$first = array_shift($albs);
 
-	$prev = array_shift($rawk);
-	foreach ($rawk as $det)
-	{
-		$rel1 = @$releasedates[$det['id']];
-		$rel2 = @$releasedates[$prev['id']];
-		if ($rel1 != $rel2)
-			$violations[] = link_for($det) . "'s release-info ( " . reldates_string($rel1) . ") mismatches with " . link_for($prev) . ' ( ' . reldates_string($rel2) . ')';
+	if (check_all_same($first, $albs))
+		continue;
 
-		foreach (array('artist', 'attributes', 'language', 'script', 'asin') as $key)
-			check_equal($violations, $key, $det, $prev);
+	$skip = strlen($acname) + 1;
 
+	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\">$acname</td></tr>\n";
 
-		$prev = $det;
-	}
+	line_for($first, $first);
 
-	$prev = $det = null;
-
-	if ($violations)
-	{
-		$total+=count($violations);
-		++$boxes;
-		echo "<h3>Mismatches in $acname</h3><ul><li>" . implode("</li><li>", $violations) . '</li></ul>';
-	}
+	foreach ($albs as $foo)
+		line_for($first, $foo);
 
 }
-echo "<p>Generated in " . (time()-$start) . " seconds. $total total, $boxes things hit.</p>";
+echo '</table>';
+echo '<p>Generated in ' . (time()-$start) . ' seconds.</p>';
+
 ?>
 </body>
 </html>
