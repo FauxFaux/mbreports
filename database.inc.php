@@ -1,6 +1,6 @@
 <?php
 
-pg_connect('host=192.168.1.3 user=musicbrainz_user dbname=musicbrainz_db');
+pg_connect('host=192.168.1.3 user=postgres dbname=musicbrainz_db');
 
 $desc = array('artistnotype.php' => 'Artists with no type',
 	'barcodes999.php' => '13 digit barcodes starting with 99',
@@ -12,6 +12,7 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'badasins.php' => '"Bad" amazon asin links',
 	'badurltypes.php' => 'Bad url types',
 	'missingdiscs.php' => 'Releases with possibly missing discs',
+	'mergeproblems2.php' => 'Merge problems take 2'
 	);
 
 function my_desc()
