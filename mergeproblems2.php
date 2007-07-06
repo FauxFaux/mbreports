@@ -34,7 +34,8 @@ my_title();
 	body { background-color: white; color: black }
 	.bore { color: grey }
 	.diff { color: red }
-	.current { font-weight: bold; background-color: black; color: white; padding: .4em }
+	p.boxedlist a { background-color: #ccc; padding: 0 .4em; border: 1px solid #777; margin-top: .2em }
+	p.boxedlist a.current { font-weight: bold; background-color: black; color: white }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
 </style>
@@ -68,11 +69,11 @@ function reldates_string($relds)
 $per_page = 500;
 $offset = 10;
 
-echo '<p>Only items starting with: ' .
-	'[ <a href="?prefix=">anything</a> ] ';
+echo '<p class="boxedlist">Only items starting with: ' .
+	'<a ' . ($prefix=='' ? 'class="current" ' : '') . 'href="?prefix=">anything</a> ';
 
 for ($i = ord('a'); $i <= ord('z'); ++$i)
-	echo '[ <a href="?prefix=' . chr($i) . '">' . (chr($i) == $prefix ? '<span class="current">' : '') . chr($i) . (chr($i) == $prefix ? '</span>' : '') . '</a> ] ';
+	echo '<a href="?prefix=' . chr($i) . '"' . (chr($i) == $prefix ? ' class="current"' : '') . '>' . chr($i) . '</a> ';
 
 echo '</p>';
 
@@ -88,18 +89,18 @@ pg_free_result($rohs);
 
 $pages = ((int)($rows/$per_page)+1);
 
-$page_suffix = '[ <a href="?prefix=' . $prefix . '&amp;page=';
+$page_suffix = '<a href="?prefix=' . $prefix . '&amp;page=';
 
-echo '<p>Page: ';
+echo '<p class="boxedlist">Page: ';
 
 if ($page > 0)
-	echo $page_suffix . ($page-1) . '">&laquo;</a> ] ';
+	echo $page_suffix . ($page-1) . '">&laquo;</a> ';
 
 for ($i = 0; $i <= $pages; ++$i)
-	echo $page_suffix . $i . '">' . ($i == $page ? '<span class="current">' : '') . ($i+1) . ($i == $page ? '</span>' : '') . '</a> ] ';
+	echo $page_suffix . $i . '"' . ($i == $page ? ' class="current"' : '') . '>' . ($i+1) . '</a> ';
 
 if ($page < $pages)
-	echo $page_suffix . ($page+1) . '">&raquo;</a> ]';
+	echo $page_suffix . ($page+1) . '">&raquo;</a>';
 
 echo '</p>';
 
