@@ -34,6 +34,7 @@ my_title();
 	body { background-color: white; color: black }
 	.bore { color: grey }
 	.diff { color: red }
+	.current { font-weight: bold; background-color: black; color: white; padding: .4em }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
 </style>
@@ -62,21 +63,56 @@ function reldates_string($relds)
 }
 
 @$page = (int)$_GET{'page'};
+@$prefix = pg_escape_string($_GET{'prefix'});
 
 $per_page = 500;
 $offset = 10;
 
-if ($page > 0)
-	echo '<a href="?page=' . ($page-1) . '">&lt;-- previous page</a> ';
+echo '<p>Only items starting with: ' .
+	'[ <a href="?prefix=">anything</a> ] ';
 
-echo '<a href="?page=' . ($page+1) . '">next page --&gt;</a>';
+for ($i = ord('a'); $i <= ord('z'); ++$i)
+	echo '[ <a href="?prefix=' . chr($i) . '">' . (chr($i) == $prefix ? '<span class="current">' : '') . chr($i) . (chr($i) == $prefix ? '</span>' : '') . '</a> ] ';
+
+echo '</p>';
+
 
 $rohs = pg_query("
 	SELECT * FROM mergeproblems_full
+	WHERE name ILIKE '$prefix%'
+	"
+);
+
+$rows = pg_num_rows($rohs);
+pg_free_result($rohs);
+
+$pages = ((int)($rows/$per_page)+1);
+
+$page_suffix = '[ <a href="?prefix=' . $prefix . '&amp;page=';
+
+echo '<p>Page: ';
+
+if ($page > 0)
+	echo $page_suffix . ($page-1) . '">&laquo;</a> ] ';
+
+for ($i = 0; $i <= $pages; ++$i)
+	echo $page_suffix . $i . '">' . ($i == $page ? '<span class="current">' : '') . ($i+1) . ($i == $page ? '</span>' : '') . '</a> ] ';
+
+if ($page < $pages)
+	echo $page_suffix . ($page+1) . '">&raquo;</a> ]';
+
+echo '</p>';
+
+$rohs = pg_query("
+	SELECT * FROM mergeproblems_full
+	WHERE name ILIKE '$prefix%'
 	ORDER BY grouper,name
 	LIMIT " . ($per_page+$offset*2) . " OFFSET " . ($page*$per_page - $offset) . "
 	"
 );
+
+if (!pg_num_rows($rohs))
+	die ('<p>No results to display on this page.</p>');
 
 function check_equal(&$violations, $key, $left, $right)
 {
