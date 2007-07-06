@@ -16,7 +16,11 @@ $d = dir('.');
 while (false !== ($entry = $d->read()))
 	if (preg_match('/^[^\\.]+\\.php$/', $entry))
 	   	echo @"<tr><td><a href=\"$entry\">$entry</a></td><td>{$desc[$entry]}.</td></tr>\n";
+
+echo '</table>';
+
+echo '<p>The <a href="/svn/mbreports/">sauce</a> is terrible, use or view at your own risk.</p>';
+
 ?>
-</table>
 </body>
 </html>

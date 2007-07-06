@@ -1,21 +1,35 @@
 <?
-/*
-CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
-		language.name as language,
-		script.name as script,
-		album_amazon_asin.asin,
-		substr(album.name, 0, strpos(album.name, ' (disc ')) AS grouper
-		FROM album
-		JOIN script ON album.script=script.id
-		JOIN language ON album.language=language.id
-		LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
-		WHERE album.name LIKE '% (disc %'
-		ORDER BY grouper
-*/
 
 require_once('database.inc.php');
+
+if (isset($_GET{'regenerate'}))
+{
+	ignore_user_abort(true);
+	set_time_limit(0);
+	echo '<p>Regenerating... you may (but shouldn\'t) close the page.</p>' . "\n";
+	flush();
+	pg_query("BEGIN;
+	DROP TABLE mergeproblems_full;
+	CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
+			language.name as language,
+			script.name as script,
+			album_amazon_asin.asin,
+			substr(album.name, 0, strpos(album.name, ' (disc ')) AS grouper
+			FROM album
+			JOIN script ON album.script=script.id
+			JOIN language ON album.language=language.id
+			LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
+			WHERE album.name LIKE '% (disc %'
+		ORDER BY grouper;
+	COMMIT;");
+
+	echo 'Done. <a href="' . $_SERVER['SCRIPT_NAME'] . '">Go back</a>.';
+	die();
+}
+
 my_title();
 ?>
+<h2>Partially CACHED report, <a href="?regenerate">regenerate cache</a> (should take under two minutes)</h2>
 <style type="text/css">
 	body { background-color: white; color: black }
 	.bore { color: grey }
@@ -84,9 +98,11 @@ while ($row = pg_fetch_assoc($rohs))
 function check_all_same($start, array $arr)
 {
 	$start['id'] = $start['name'] = '';
+	$start['asin'] = $start['asin'] ? trim($start['asin']) : '';
 	foreach ($arr as $bits)
 	{
 		$bits['id'] = $bits['name'] = '';
+		$bits['asin'] = $bits['asin'] ? trim($bits['asin']) : '';
 		if ($bits != $start)
 			return false;
 	}
