@@ -34,8 +34,9 @@ my_title();
 	body { background-color: white; color: black }
 	.bore { color: grey }
 	.diff { color: red }
-	p.boxedlist a { background-color: #ccc; padding: 0 .4em; border: 1px solid #777; margin-top: .2em }
+	p.boxedlist a { background-color: #ddd; padding: 0 .4em; border: 1px solid #777; margin-top: .2em }
 	p.boxedlist a.current { font-weight: bold; background-color: black; color: white }
+	td.dirty { background-color: #fcc }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
 </style>
@@ -87,7 +88,7 @@ $rohs = pg_query("
 $rows = pg_num_rows($rohs);
 pg_free_result($rohs);
 
-$pages = ((int)($rows/$per_page)+1);
+$pages = (int)($rows/$per_page);
 
 $page_suffix = '<a href="?prefix=' . $prefix . '&amp;page=';
 
@@ -113,7 +114,7 @@ $rohs = pg_query("
 );
 
 if (!pg_num_rows($rohs))
-	die ('<p>No results to display on this page.</p>');
+	die ('<p>No items considered on this page. Invalid prefix/page number.</p>');
 
 function check_equal(&$violations, $key, $left, $right)
 {
@@ -207,17 +208,33 @@ foreach ($dat as $acname => $albs)
 
 
 	unset($albs['ids']);
+	$skip = strlen($acname) + 1;
 
-	reset($albs);
-	$starid = key($albs);
+	$discs = array();
+	foreach ($albs as $alb)
+		if (preg_match('/\(disc ([0-9]+)/', substr($alb['name'], $skip), $regs))
+			@++$discs[$regs[1]];
+
+	$high = max(array_keys($discs));
+
+	$dirty = false;
+
+	for ($i = 1; $i <= $high; ++$i)
+	{
+		if (@$discs[$i] != 1)
+			$dirty = true;
+		unset($discs[$i]);
+	}
+
+	if (count($discs))
+		$dirty = true;
+
 	$first = array_shift($albs);
 
 	if (check_all_same($first, $albs))
 		continue;
 
-	$skip = strlen($acname) + 1;
-
-	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\">$acname</td></tr>\n";
+	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\"" . ($dirty ? ' class="dirty"' : '') . ">$acname</td></tr>\n";
 
 	line_for($first, $first);
 
