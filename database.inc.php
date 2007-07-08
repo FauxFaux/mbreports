@@ -13,7 +13,8 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'badbadasins.php' => '"Really Bad" (tm) amazon asin links',
 	'badurltypes.php' => 'Bad url types',
 	'missingdiscs.php' => 'Releases with possibly missing discs',
-	'mergeproblems2.php' => 'Merge problems take 2'
+	'mergeproblems2.php' => 'Merge problems take 2',
+	'neweditsof.php' => 'Add release edits of a certain type'
 	);
 
 function my_desc()
