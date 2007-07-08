@@ -116,12 +116,6 @@ $rohs = pg_query("
 if (!pg_num_rows($rohs))
 	die ('<p>No items considered on this page. Invalid prefix/page number.</p>');
 
-function check_equal(&$violations, $key, $left, $right)
-{
-	if ($left[$key] != $right[$key])
-		$violations[] = link_for($left) . "'s $key ( " . if_not_missing($left[$key]) . " ) mismatches with " . link_for($right) . ' ( ' . if_not_missing($right[$key]) . ' )';
-}
-
 $boxes = $total = 0;
 
 $dat = array();
