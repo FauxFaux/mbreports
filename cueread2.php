@@ -1,4 +1,22 @@
 <?
+
+/*
+ * This depends on (aggregate stolen from http://www.postgresql.org/docs/8.0/static/xaggr.html):
+
+CREATE AGGREGATE array_accum (
+	sfunc = array_append,
+	basetype = anyelement,
+	stype = anyarray,
+	initcond = '{}'
+);
+
+create temporary view album_tracklen as select albumjoin.album,albumjoin.sequence,length from track join albumjoin on (track.id = albumjoin.track) order by albumjoin.sequence;
+create temporary view album_trackponies as select album,array_accum(length) as tracklist from album_tracklen group by album;
+create table album_tracklist as select album,tracklist,array_upper(tracklist, 1) as track_count from album_trackponies
+
+ * This could take of the order of 20 minutes to run.
+ */
+
 require_once('database.inc.php');
 
 my_title();
