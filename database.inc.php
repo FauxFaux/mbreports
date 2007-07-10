@@ -14,7 +14,9 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'badurltypes.php' => 'Bad url types',
 	'missingdiscs.php' => 'Releases with possibly missing discs',
 	'mergeproblems2.php' => 'Merge problems take 2',
-	'neweditsof.php' => 'Add release edits of a certain type'
+	'neweditsof.php' => 'Add release edits of a certain type',
+	'discseq.php' => 'WIP',
+	'cueread.php' => 'Attempt to guess the album from a series of times (ie. a cue file)',
 	);
 
 function my_desc()
