@@ -41,13 +41,15 @@ echo '<form method="post"><textarea style="width: 100%; height: 50em" name="cue"
 ?:??
 ?:??
 5:00
-5:07" : htmlentities($f)) . '</textarea><p><input type="submit"/></p>';
+5:07" : htmlentities($f)) . '</textarea><p><input type="submit"/></p></form>';
 
-//(?<!INDEX 00 )
-preg_match_all('/((?:\?:\?\?)|(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?))/i', $f, $regs);
-$regs=$regs[1];
+// Grab the times (or literal ?:??) from the input string.
+preg_match_all('/(?<!INDEX 00 )((?:\?:\?\?)|(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?))/i', $f, $regs);
 
-function tosectors($thing)
+// Take only the matches.
+$times_string = $regs[1];
+
+function string_time_to_ms($thing)
 {
 	if ($thing == '?:??')
 		return null;
@@ -55,19 +57,29 @@ function tosectors($thing)
 	return (int)(($thing[0] * 60 + $thing[1] + @$thing[2]/100) * 1000);
 }
 
-$regs = array_map('tosectors', $regs);
+// Convert the string times to milliseconds.
+$times_ms = array_map('string_time_to_ms', $times_string);
 
-if (!count($regs))
+if (!count($times_ms))
 	die('<p>No tracks?</p>');
 
-echo '<p>' . count($regs) . ' tracks.</p>';
+echo '<p>' . count($times_ms) . ' tracks.</p>';
 
-$sql = "SELECT DISTINCT album.id,artist.name,album.name as album FROM album_tracklist JOIN album ON (album.id = album_tracklist.album) JOIN artist ON (artist.id = album.artist) WHERE track_count = " . count($regs) . "\n";
-//$sql = "SELECT DISTINCT album_tracklist.album FROM album_tracklist WHERE track_count = " . count($regs) . "\n";
 
-foreach ($regs as $no => $r)
-	if ($r !== null)
-		$sql .= "\tAND (tracklist[" . ($no+1) . "] BETWEEN " . (int)($r-5000). " AND " . (int)($r+5000) . ")\n";
+// Basis of our sql statement:
+$sql = "SELECT DISTINCT album.id,artist.name,album.name as album " .
+	"FROM album_tracklist " .
+	"JOIN album ON (album.id = album_tracklist.album) " .
+	"JOIN artist ON (artist.id = album.artist) " .
+	"WHERE track_count = " . count($times_ms) . "\n";
+
+
+$wiggle_room = 5000; // 5000ms = 5 seconds.
+
+foreach ($times_ms as $track_number_zero => $length)
+	// If the $length is exactly null it means we're ignoring this track.
+	if ($length !== null)
+		$sql .= "\tAND (tracklist[" . ($track_number_zero+1) . "] BETWEEN " . ($length - $wiggle_room). " AND " . ($length + $wiggle_room) . ")\n";
 
 $sql .= "\tORDER BY album.name LIMIT 20";
 
@@ -80,6 +92,7 @@ if (!pg_num_rows($res))
 
 echo '<ul>';
 
+// Dump the results to the browser.
 while ($row = pg_fetch_assoc($res))
 	echo "<li><a href=\"http://musicbrainz.org/show/release/?releaseid={$row['id']}\">{$row['album']}</a> ({$row['name']})</li>\n";
 
