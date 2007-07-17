@@ -19,6 +19,9 @@ while (false !== ($entry = $d->read()))
 
 echo '</table>';
 
+echo '<h2>Others</h2>';
+echo '<ul><li><a href="http://faux.uwcs.co.uk/altraread.html">Guessed duplicate releases</a></li></ul>';
+
 echo '<p>The <a href="/svn/mbreports/">sauce</a> is terrible, use or view at your own risk.</p>';
 
 ?>
