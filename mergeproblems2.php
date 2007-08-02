@@ -1,5 +1,11 @@
 <?
 
+/* SELECT album,array_accum(
+	COALESCE(country, 0) ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0)
+) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mergeproblems_full) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = release.country) GROUP BY album
+--
+*/
+
 require_once('database.inc.php');
 
 if (isset($_GET{'regenerate'}))
@@ -173,6 +179,16 @@ function line_for($compare_to, $what)
 		'</tr>';
 }
 
+function usort_discnos_real($left, $right)
+{
+	if (!isset($left['name']))
+		var_dump($left);
+	if (preg_match('/\(disc ([0-9]+)/', $left['name'], $larl))
+		if (preg_match('/\(disc ([0-9]+)/', $right['name'], $rarl))
+			return $larl[1] < $rarl[1] ? -1 : 1;
+	return 0;
+}
+
 foreach ($dat as $acname => $albs)
 {
 	if (count($albs) < 2)
@@ -200,9 +216,10 @@ foreach ($dat as $acname => $albs)
 		$albs[$alb]['releasedate'][] = $row;
 	}
 
-
 	unset($albs['ids']);
 	$skip = strlen($acname) + 1;
+
+	uasort($albs, 'usort_discnos_real');
 
 	$discs = array();
 	foreach ($albs as $alb)

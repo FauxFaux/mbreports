@@ -6,18 +6,18 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'barcodes999.php' => '13 digit barcodes starting with 99',
 	'catasins.php' => 'Catalogue numbers that look like asins or label codes',
 	'index.php' => 'This page',
-	'mergeproblems.php' => 'Releases where information on (disc 2) does not match (disc 1) and etc.',
 	'sillybarcodes.php' => 'Barcodes matching /^0?0946[0-9]{8}$/ (don\'t ask)',
 	'upcnoasin.php' => 'Releases with an UPC but not an ASIN',
 	'badasins.php' => '"Bad" amazon asin links',
-	'badbadasins.php' => '"Really Bad" (tm) amazon asin links',
+	'badbadasins.php' => '[fully static] "Really Bad" (tm) amazon asin links',
 	'badurltypes.php' => 'Bad url types',
 	'missingdiscs.php' => 'Releases with possibly missing discs',
-	'mergeproblems2.php' => 'Merge problems take 2',
+	'mergeproblems2.php' => 'Merge problems take 2 (regeneratable cache)',
 	'neweditsof.php' => 'Add release edits of a certain type',
 	'discseq.php' => 'WIP',
 	'cueread.php' => 'Attempt to guess the album from a series of times (ie. a cue file)',
-	'cueread2.php' => 'Dump in a set of times to find the release(s) (static cache)'
+	'cueread2.php' => 'Dump in a set of times to find the release(s) (static cache)',
+	'usefulannotations.php' => '[fully static] Possibly useful annotations.'
 	);
 
 function my_desc()

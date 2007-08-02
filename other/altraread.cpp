@@ -11,6 +11,13 @@ using namespace std;
 
 typedef vector<int> v_i;
 
+int round(float f)
+{
+	if (f-floor(f) >= .5f)
+		return ceil(f);
+	return floor(f);
+}
+
 ostream& operator<<(ostream& o, const v_i& tl)
 {
 	copy(tl.begin(), tl.end(), ostream_iterator<int>(o, ", "));
@@ -59,7 +66,7 @@ int main()
 
 	while (getline(fi, line))
 	{
-		if (!isdigit(line[0]))
+		if (!isdigit(line.at(0)))
 			continue;
 
 		long id; string mid; int count;
@@ -76,7 +83,7 @@ int main()
 			char dis; ss >> dis;
 			string ti;
 			while (getline(ss, ti, ','))
-				out.push_back(atoi(ti.c_str()));
+				out.push_back(round(atoi(ti.c_str())/5000.0f));
 
 			if (!sum(out))
 				continue;
