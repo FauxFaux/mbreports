@@ -2,6 +2,23 @@
 
 require_once('database.inc.php');
 
+// From release.pm, not avaliable elsewhere.
+$formats = array(
+	1 => 'cd',
+	2 => 'dvd',
+	3 => 'sacd',
+	4 => 'dualdisc',
+	5 => 'laserdisc',
+	6 => 'minidisc',
+	7 => 'vinyl',
+	8 => 'cassette',
+	9 => 'cartridge',
+	10 => 'reel to reel',
+	11 => 'dat',
+	12 => 'digital',
+	13 => 'other',
+);
+
 if (isset($_GET{'regenerate'}))
 {
 	ignore_user_abort(true);
@@ -16,8 +33,8 @@ if (isset($_GET{'regenerate'}))
 
 		DROP TABLE IF EXISTS mp_dates;
 		CREATE TEMPORARY TABLE mp_dates AS SELECT album,string_accum(
-			COALESCE(country.isocode, '') ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
-		) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mp_ids) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = ponies.country) GROUP BY album;
+			COALESCE(country.isocode, '') ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label.name, '') ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
+		) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mp_ids) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = ponies.country) JOIN label ON (label.id = ponies.label) GROUP BY album;
 
 		DROP TABLE IF EXISTS mergeproblems_full;
 		CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
@@ -48,6 +65,8 @@ my_title();
 	.diff { color: red }
 	p.boxedlist a { background-color: #ddd; padding: 0 .4em; border: 1px solid #777; margin-top: .2em }
 	p.boxedlist a.current { font-weight: bold; background-color: black; color: white }
+	span.reldate { margin-right: 1em }
+	span.relcountry { padding: .2em; border: 1px dashed black }
 	td.dirty { background-color: #fcc }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
@@ -68,13 +87,16 @@ function if_not_missing($var)
 
 function reldates_string($relds)
 {
+	global $formats;
 	$s = '';
 	if (!$relds)
 		return missing();
 	foreach (explode(';', $relds) as $reld)
 	{
 		$reld = explode('||', $reld);
-		$s .= "{$reld[0]} {$reld[1]} <b>{$reld[2]} {$reld[3]}</b> {$reld[4]} <b>{$reld[5]}</b>";
+		if (count($reld) < 6)
+			continue;
+		$s .= "<span class=\"reldate\"><span class=\"relcountry\">{$reld[0]}</span> {$reld[1]} <b>{$reld[2]} {$reld[3]}</b> {$reld[4]} <b>{$formats[$reld[5]]}</b></span>";
 	}
 	return $s;
 }
