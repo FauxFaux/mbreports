@@ -8,6 +8,7 @@ if (isset($_GET{'regenerate'}))
 	set_time_limit(0);
 	echo '<p>Regenerating... you may (but shouldn\'t) close the page.</p>' . "\n";
 	flush();
+	// Yeah, this is unbelievably awful. Trust me, I tried to get it to run in a sane time the other ways. Please, if you can, fix it.
 	pg_query("BEGIN;
 		DROP TABLE IF EXISTS mp_ids;
 		CREATE TEMPORARY TABLE mp_ids AS SELECT id FROM album WHERE album.name LIKE '% (disc %';
@@ -15,7 +16,7 @@ if (isset($_GET{'regenerate'}))
 
 		DROP TABLE IF EXISTS mp_dates;
 		CREATE TEMPORARY TABLE mp_dates AS SELECT album,string_accum(
-			COALESCE(country, 0) ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
+			COALESCE(country.isocode, '') ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
 		) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mp_ids) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = ponies.country) GROUP BY album;
 
 		DROP TABLE IF EXISTS mergeproblems_full;
@@ -23,7 +24,7 @@ if (isset($_GET{'regenerate'}))
 			language.name as language,
 			script.name as script,
 			album_amazon_asin.asin,
-			mp_dates.reldate,
+			mp_dates.reldate as releasedate,
 			substr(album.name, 0, strpos(album.name, ' (disc ')) AS grouper
 			FROM album
 			JOIN mp_ids ON mp_ids.id=album.id
@@ -70,8 +71,11 @@ function reldates_string($relds)
 	$s = '';
 	if (!$relds)
 		return missing();
-	foreach ($relds as $reld)
-		$s .= "{$reld['country']} {$reld['releasedate']} <b>{$reld['label']} {$reld['catno']}</b> {$reld['barcode']} <b>{$reld['format']}</b>";
+	foreach (explode(';', $relds) as $reld)
+	{
+		$reld = explode('||', $reld);
+		$s .= "{$reld[0]} {$reld[1]} <b>{$reld[2]} {$reld[3]}</b> {$reld[4]} <b>{$reld[5]}</b>";
+	}
 	return $s;
 }
 
@@ -91,12 +95,15 @@ echo '</p>';
 
 
 $rohs = pg_query("
-	SELECT * FROM mergeproblems_full
+	SELECT COUNT(*) FROM mergeproblems_full
 	WHERE name ILIKE '$prefix%'
 	"
-) or die('The cache is missing. Try regenerating it above?');
+);
+if (!$rohs)
+	die('The cache is missing. Try regenerating it above?');
 
-$rows = pg_num_rows($rohs);
+$tmp = pg_fetch_assoc($rohs);
+$rows = $tmp['count'];
 pg_free_result($rohs);
 
 $pages = (int)($rows/$per_page);
@@ -133,7 +140,6 @@ $dat = array();
 
 while ($row = pg_fetch_assoc($rohs))
 {
-	;
 	@$dat[$row['grouper']][$row['id']] = $row;
 	@$dat[$row['grouper']]['ids'][] = $row['id'];
 }
@@ -200,25 +206,6 @@ foreach ($dat as $acname => $albs)
 	{
 		echo "$acname unexpectedly empty. Skipping.<br/>";
 		continue;
-	}
-
-	$ids = $albs['ids'];
-
-	$res = pg_query("SELECT
-		album,isocode as country,releasedate,label,catno,barcode,format
-		FROM release
-		JOIN country ON (country.id = release.country)
-		WHERE album IN (" . implode(",", $ids) . ")
-		ORDER BY album,isocode,releasedate,label,catno,barcode,format
-	");
-
-	$releasedates = array();
-
-	while ($row = pg_fetch_assoc($res))
-	{
-		$alb = $row['album'];
-		unset($row['album']);
-		$albs[$alb]['releasedate'][] = $row;
 	}
 
 	unset($albs['ids']);
