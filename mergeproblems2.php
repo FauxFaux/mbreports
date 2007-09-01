@@ -36,8 +36,11 @@ if (isset($_GET{'regenerate'}))
 			COALESCE(country.isocode, '') ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label.name, '') ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
 		) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mp_ids) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = ponies.country) JOIN label ON (label.id = ponies.label) GROUP BY album;
 
+		DROP TABLE IF EXISTS mp_artist_name;
+		CREATE TEMPORARY TABLE mp_artist_name AS SELECT album.id,artist.name AS artist FROM artist JOIN album ON album.artist=artist.id JOIN mp_ids ON album.id=mp_ids.id;
+
 		DROP TABLE IF EXISTS mergeproblems_full;
-		CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
+		CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,mp_artist_name.artist,album.attributes,
 			language.name as language,
 			script.name as script,
 			album_amazon_asin.asin,
@@ -45,6 +48,7 @@ if (isset($_GET{'regenerate'}))
 			substr(album.name, 0, strpos(album.name, ' (disc ')) AS grouper
 			FROM album
 			JOIN mp_ids ON mp_ids.id=album.id
+			JOIN mp_artist_name ON mp_artist_name.id=mp_ids.id
 			LEFT JOIN mp_dates on mp_ids.id=mp_dates.album
 			JOIN script ON album.script=script.id
 			JOIN language ON album.language=language.id
@@ -67,8 +71,8 @@ my_title();
 	p.boxedlist a.current { font-weight: bold; background-color: black; color: white }
 	span.reldate { margin-right: 1em }
 	span.relcountry { padding: .2em; border: 1px dashed black }
-	.dirty { background-color: #fcc }
-	.dirtydupes { background-color: #ccf }
+	.dirty { background-color: #fec }
+	.dirtydupes { background-color: #fcc }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
 </style>
@@ -186,7 +190,7 @@ $span = 7;
 
 ?>
 <hr/>
-<table><tr><th>disc <abbr title="The disc numbers don't add-up.." class="dirty">...</abbr> <abbr title="..but do form more than one perfect sequence." class="dirtydupes">...</abbr></th><th>Artist</th><th>Attributes</th><th>Language</th><th>Script</th><th>ASIN</th><th>Release events</th></tr>
+<table><tr><th>disc <abbr title="There's more than one complete (as far as I can tell) cd of this name." class="dirtydupes">...</abbr> <abbr title="There aren't enough disc numbers for me to make a guess." class="dirty">...</abbr></th><th>Artist</th><th>Attributes</th><th>Language</th><th>Script</th><th>ASIN</th><th>Release events</th></tr>
 <?
 
 
@@ -245,7 +249,7 @@ foreach ($dat as $acname => $albs)
 
 	$high = max(array_keys($discs));
 
-	@$perfectdupes = $discs[1] > 1;
+	@$perfectdupes = $discs[2] > 1;
 	@$clean = $discs[1] == 1;
 
 	for ($i=2; $i <= $high; ++$i)
