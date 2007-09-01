@@ -1,11 +1,5 @@
 <?
 
-/* SELECT album,array_accum(
-	COALESCE(country, 0) ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0)
-) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mergeproblems_full) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = release.country) GROUP BY album
---
-*/
-
 require_once('database.inc.php');
 
 if (isset($_GET{'regenerate'}))
@@ -15,17 +9,28 @@ if (isset($_GET{'regenerate'}))
 	echo '<p>Regenerating... you may (but shouldn\'t) close the page.</p>' . "\n";
 	flush();
 	pg_query("BEGIN;
-	DROP TABLE mergeproblems_full;
-	CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
+		DROP TABLE IF EXISTS mp_ids;
+		CREATE TEMPORARY TABLE mp_ids AS SELECT id FROM album WHERE album.name LIKE '% (disc %';
+		SELECT * FROM mp_ids;
+
+		DROP TABLE IF EXISTS mp_dates;
+		CREATE TEMPORARY TABLE mp_dates AS SELECT album,string_accum(
+			COALESCE(country, 0) ||'||'|| COALESCE(releasedate, '') ||'||'|| COALESCE(label, 0) ||'||'|| COALESCE(catno, '') ||'||'|| COALESCE(barcode, '') ||'||'|| COALESCE(format, 0) ||';'
+		) AS reldate FROM (SELECT * FROM release WHERE album IN (SELECT id FROM mp_ids) ORDER BY country,releasedate) AS ponies JOIN country ON (country.id = ponies.country) GROUP BY album;
+
+		DROP TABLE IF EXISTS mergeproblems_full;
+		CREATE TABLE mergeproblems_full AS SELECT album.id,album.name,album.artist,album.attributes,
 			language.name as language,
 			script.name as script,
 			album_amazon_asin.asin,
+			mp_dates.reldate,
 			substr(album.name, 0, strpos(album.name, ' (disc ')) AS grouper
 			FROM album
+			JOIN mp_ids ON mp_ids.id=album.id
+			LEFT JOIN mp_dates on mp_ids.id=mp_dates.album
 			JOIN script ON album.script=script.id
 			JOIN language ON album.language=language.id
 			LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
-			WHERE album.name LIKE '% (disc %'
 		ORDER BY grouper;
 	COMMIT;");
 
@@ -89,7 +94,7 @@ $rohs = pg_query("
 	SELECT * FROM mergeproblems_full
 	WHERE name ILIKE '$prefix%'
 	"
-);
+) or die('The cache is missing. Try regenerating it above?');
 
 $rows = pg_num_rows($rohs);
 pg_free_result($rohs);
