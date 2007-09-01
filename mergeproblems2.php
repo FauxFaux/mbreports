@@ -67,7 +67,8 @@ my_title();
 	p.boxedlist a.current { font-weight: bold; background-color: black; color: white }
 	span.reldate { margin-right: 1em }
 	span.relcountry { padding: .2em; border: 1px dashed black }
-	td.dirty { background-color: #fcc }
+	.dirty { background-color: #fcc }
+	.dirtydupes { background-color: #ccf }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
 </style>
@@ -185,7 +186,7 @@ $span = 7;
 
 ?>
 <hr/>
-<table><tr><th>disc</th><th>Artist</th><th>Attributes</th><th>Language</th><th>Script</th><th>ASIN</th><th>Release events</th></tr>
+<table><tr><th>disc <abbr title="The disc numbers don't add-up.." class="dirty">...</abbr> <abbr title="..but do form more than one perfect sequence." class="dirtydupes">...</abbr></th><th>Artist</th><th>Attributes</th><th>Language</th><th>Script</th><th>ASIN</th><th>Release events</th></tr>
 <?
 
 
@@ -242,24 +243,21 @@ foreach ($dat as $acname => $albs)
 
 	$high = max(array_keys($discs));
 
-	$dirty = false;
+	@$perfectdupes = $discs[1] > 1;
+	@$clean = $discs[1] == 1;
 
-	for ($i = 1; $i <= $high; ++$i)
+	for ($i=2; $i <= $high; ++$i)
 	{
-		if (@$discs[$i] != 1)
-			$dirty = true;
-		unset($discs[$i]);
+		@$perfectdupes &= ($discs[$i-1] >= $discs[$i]);
+		@$clean &= ($discs[$i] == 1);
 	}
-
-	if (count($discs))
-		$dirty = true;
 
 	$first = array_shift($albs);
 
 	if (check_all_same($first, $albs))
 		continue;
 
-	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\"" . ($dirty ? ' class="dirty"' : '') . ">$acname</td></tr>\n";
+	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\"" . ($perfectdupes ? ' class="dirtydupes"' : (!$clean ? ' class="dirty"' : '')) . ">$acname</td></tr>\n";
 
 	line_for($first, $first);
 
