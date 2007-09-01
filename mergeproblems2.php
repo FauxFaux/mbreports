@@ -203,7 +203,9 @@ function comparison($compare_to, $what, $key)
 function line_for($compare_to, $what)
 {
 	global $skip;
-	echo '<tr class="dr"><td><a href="http://musicbrainz.org/show/release/?releaseid=' . $what['id'] . '">' . substr($what['name'], $skip) . '</a></td>' .
+	echo '<tr class="dr"><td><a href="http://musicbrainz.org/show/release/?releaseid=' . $what['id'] . '">' . substr($what['name'], $skip) . '</a> ' .
+		(isset($what['track_count']) ? '(<abbr title="' . $what['track_count'] . ' tracks on this disc.">' . $what['track_count'] . '</abbr>)' : '') .
+		'</td>' .
 		'<td class="' . comparison($compare_to, $what, 'artist') . '</td>' .
 		'<td class="' . comparison($compare_to, $what, 'attributes') . '</td>' .
 		'<td class="' . comparison($compare_to, $what, 'language') . '</td>' .
@@ -250,6 +252,13 @@ foreach ($dat as $acname => $albs)
 	{
 		@$perfectdupes &= ($discs[$i-1] >= $discs[$i]);
 		@$clean &= ($discs[$i] == 1);
+	}
+
+	if (!$clean)
+	{
+		$tch = pg_query("SELECT album,COUNT(track) FROM albumjoin WHERE album IN (" . implode(',', array_keys($albs)) . ") GROUP BY album");
+		while ($row = pg_fetch_assoc($tch))
+			$albs[$row['album']]['track_count'] = $row['count'];
 	}
 
 	$first = array_shift($albs);
