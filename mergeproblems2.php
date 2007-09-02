@@ -54,6 +54,17 @@ if (isset($_GET{'regenerate'}))
 			JOIN language ON album.language=language.id
 			LEFT JOIN album_amazon_asin ON album.id=album_amazon_asin.album
 		ORDER BY grouper;
+
+
+		DROP VIEW IF EXISTS mp_firstchar_sort;
+		DROP VIEW IF EXISTS mp_firstchar_count;
+		DROP VIEW IF EXISTS mp_firstchar;
+		DROP TABLE IF EXISTS mergeproblems_characters;
+		CREATE TEMPORARY VIEW mp_firstchar AS SELECT LOWER(SUBSTR(name, 1,1)) AS cha FROM mergeproblems_full;
+		CREATE TEMPORARY VIEW mp_firstchar_count AS SELECT COUNT(*),cha FROM mp_firstchar GROUP BY cha;
+		CREATE TEMPORARY VIEW mp_firstchar_sort AS SELECT * FROM mp_firstchar_count ORDER BY count DESC LIMIT 30;
+		CREATE TABLE mergeproblems_characters AS SELECT cha FROM mp_firstchar_sort ORDER BY cha ASC;
+
 	COMMIT;");
 
 	echo 'Done. <a href="' . $_SERVER['SCRIPT_NAME'] . '">Go back</a>.';
@@ -115,8 +126,9 @@ $offset = 10;
 echo '<p class="boxedlist">Only items starting with: ' .
 	'<a ' . ($prefix=='' ? 'class="current" ' : '') . 'href="?prefix=">anything</a> ';
 
-for ($i = ord('a'); $i <= ord('z'); ++$i)
-	echo '<a href="?prefix=' . chr($i) . '"' . (chr($i) == $prefix ? ' class="current"' : '') . '>' . chr($i) . '</a> ';
+$charh = pg_query('SELECT cha FROM mergeproblems_characters');
+while ($row = pg_fetch_assoc($charh))
+	echo '<a href="?prefix=' . $row['cha'] . '"' . ($row['cha'] == strtolower($prefix) ? ' class="current"' : '') . '>' . $row['cha'] . '</a> ';
 
 echo '</p>';
 
