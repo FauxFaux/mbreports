@@ -21,13 +21,33 @@ require_once('database.inc.php');
 
 my_title();
 
-echo '<p>Dump a set of times (ie. n:nn(:nn)) into the box, most crap\'ll be ignored. Use ?:?? to indicate a missing/unknown track.</p>';
+function string_time_to_ms($thing)
+{
+	if ($thing == '?:??')
+		return null;
+	$thing = explode(':', $thing);
+	return (int)(($thing[0] * 60 + $thing[1] + @$thing[2]/100) * 1000);
+}
 
-$f = @$_REQUEST{'cue'};
+$times_ms = array();
 
-file_put_contents('cueread_' . sha1($f) . '.post', $f);
+$tns = array_keys($_GET);
+$track_count = @max($tns);
 
-echo '<form method="post"><textarea style="width: 100%; height: 50em" name="cue">' . (!$f ? "5:29
+assert($track_count <= 99);
+
+if (@$track_count)
+	for ($i = 1; $i <= $track_count; ++$i)
+		$t = $_GET{$i} and $times_ms[$i-1] = is_numeric($t) ? (int)($t) : null;
+else
+{
+	echo '<p>Dump a set of times (ie. n:nn(:nn)) into the box, most crap\'ll be ignored. Use ?:?? to indicate a missing/unknown track.</p>';
+	echo '<p>See also: <a href="searchbytimes.py">searchbytimes.py</a>, the PicardQt plugin.</a></p>';
+	$f = @$_REQUEST{'cue'};
+
+	file_put_contents('cueread_' . sha1($f) . '.post', $f);
+
+	echo '<form method="post"><textarea style="width: 100%; height: 50em" name="cue">' . (!$f ? "5:29
 4:30
 5:04
 4:29
@@ -43,31 +63,27 @@ echo '<form method="post"><textarea style="width: 100%; height: 50em" name="cue"
 5:00
 5:07" : htmlentities($f)) . '</textarea><p><input type="submit"/></p></form>';
 
-// Grab the times (or literal ?:??) from the input string.
-preg_match_all('/(?<!INDEX 00 )((?:\?:\?\?)|(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?))/i', $f, $regs);
+	// Grab the times (or literal ?:??) from the input string.
+	preg_match_all('/(?<!INDEX 00 )((?:\?:\?\?)|(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?))/i', $f, $regs);
 
-// Take only the matches.
-$times_string = $regs[1];
+	// Take only the matches.
+	$times_string = $regs[1];
 
-function string_time_to_ms($thing)
-{
-	if ($thing == '?:??')
-		return null;
-	$thing = explode(':', $thing);
-	return (int)(($thing[0] * 60 + $thing[1] + @$thing[2]/100) * 1000);
+
+	// Convert the string times to milliseconds.
+	$times_ms = array_map('string_time_to_ms', $times_string);
+
 }
-
-// Convert the string times to milliseconds.
-$times_ms = array_map('string_time_to_ms', $times_string);
 
 if (!count($times_ms))
 	die('<p>No tracks?</p>');
 
+echo '<iframe name="hiddeniframe" style="display: none"></iframe>';
 echo '<p>' . count($times_ms) . ' tracks.</p>';
 
 
 // Basis of our sql statement:
-$sql = "SELECT DISTINCT album.id,artist.name,album.name as album " .
+$sql = "SELECT DISTINCT album.id,artist.name,album.name as album,album.gid as gid " .
 	"FROM album_tracklist " .
 	"JOIN album ON (album.id = album_tracklist.album) " .
 	"JOIN artist ON (artist.id = album.artist) " .
@@ -83,8 +99,6 @@ foreach ($times_ms as $track_number_zero => $length)
 
 $sql .= "\tORDER BY album.name LIMIT 20";
 
-//die($sql);
-
 $res = pg_query($sql);
 
 if (!pg_num_rows($res))
@@ -94,6 +108,6 @@ echo '<ul>';
 
 // Dump the results to the browser.
 while ($row = pg_fetch_assoc($res))
-	echo "<li><a href=\"http://musicbrainz.org/show/release/?releaseid={$row['id']}\">{$row['album']}</a> ({$row['name']})</li>\n";
+	echo '<li><a href="http://127.0.0.1:' . (isset($_GET{'tport'}) ? $_GET{'tport'} : '8000') . '/openalbum?id=' . $row['gid'] . '" target="hiddeniframe"><img src="http://musicbrainz.org/images/mblookup-tagger.png"/></a> <a href=\"http://musicbrainz.org/show/release/?releaseid=' . "{$row['id']}\">{$row['album']}</a> ({$row['name']})</li>\n";
 
 echo '</ul>';

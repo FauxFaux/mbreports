@@ -16,7 +16,7 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'neweditsof.php' => 'Add release edits of a certain type',
 	'discseq.php' => 'WIP',
 	'cueread.php' => 'Attempt to guess the album from a series of times (ie. a cue file)',
-	'cueread2.php' => 'Dump in a set of times to find the release(s) (static cache)',
+	'cueread2.php' => 'Lookup by times (static cache)',
 	'usefulannotations.php' => '[fully static] Possibly useful annotations.',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
