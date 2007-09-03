@@ -38,7 +38,10 @@ assert($track_count <= 99);
 
 if (@$track_count)
 	for ($i = 1; $i <= $track_count; ++$i)
-		$t = $_GET{$i} and $times_ms[$i-1] = is_numeric($t) ? (int)($t) : null;
+	{
+		$t = $_GET{$i};
+		$times_ms[$i-1] = is_numeric($t) ? (int)($t) : null;
+	}
 else
 {
 	echo '<p>Dump a set of times (ie. n:nn(:nn)) into the box, most crap\'ll be ignored. Use ?:?? to indicate a missing/unknown track.</p>';
@@ -108,6 +111,6 @@ echo '<ul>';
 
 // Dump the results to the browser.
 while ($row = pg_fetch_assoc($res))
-	echo '<li><a href="http://127.0.0.1:' . (isset($_GET{'tport'}) ? $_GET{'tport'} : '8000') . '/openalbum?id=' . $row['gid'] . '" target="hiddeniframe"><img src="http://musicbrainz.org/images/mblookup-tagger.png"/></a> <a href=\"http://musicbrainz.org/show/release/?releaseid=' . "{$row['id']}\">{$row['album']}</a> ({$row['name']})</li>\n";
+	echo '<li><a href="http://127.0.0.1:' . (isset($_GET{'tport'}) ? $_GET{'tport'} : '8000') . '/openalbum?id=' . $row['gid'] . '" target="hiddeniframe"><img src="http://musicbrainz.org/images/mblookup-tagger.png"/></a> <a href="http://musicbrainz.org/show/release/?releaseid=' . "{$row['id']}\">{$row['album']}</a> ({$row['name']})</li>\n";
 
 echo '</ul>';
