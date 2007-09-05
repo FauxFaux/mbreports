@@ -19,6 +19,7 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'cueread.php' => 'Attempt to guess the album from a series of times (ie. a cue file)',
 	'cueread2.php' => 'Lookup by times (static cache)',
 	'usefulannotations.php' => '[fully static] Possibly useful annotations.',
+	'nonimgurls.php' => 'Coverart urls that don\'t end in image extensions',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
 

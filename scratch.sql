@@ -16,3 +16,8 @@ order by album.name,track_number
 
 CREATE FUNCTION concat(text, text) RETURNS text AS 'select $1||$2' LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT;
 CREATE AGGREGATE string_accum (text) ( sfunc = concat, stype = text, initcond = '' );
+
+
+create or replace temporary view at_noempties as select * from album_tracklist where sum_array(tracklist) != 0;
+--select track_count,count(*) from at_noempties group by track_count order by count desc;
+select * from at_noempties where track_count = 20 order by tracklist[1] asc;
