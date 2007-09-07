@@ -11,7 +11,7 @@ $rules = array(
 	'discogs' =>			"url NOT ILIKE 'http://%discogs.%/%'",
 	'purevolume' =>			"url NOT ILIKE 'http://www.purevolume.com/%'",
 	'myspace' =>			"url NOT ILIKE 'http://%myspace.com/%'",
-	'wikipedia' =>			"url NOT ILIKE 'http://%.wikipedia.org/%'"
+	'wikipedia' =>			"url NOT ILIKE 'http://%wikipedia.org/%'"
 );
 
 $types = array('album', 'label', 'artist');
@@ -81,11 +81,13 @@ while ($row = pg_fetch_assoc($res))
 {
 	if (isset($last) && $row['linkphrase'] != $last)
 		echo '<tr><td colspan="2"><hr/></td></tr>';
+	$url_type_other = ($row['url_type'] == 'release' ? 'album' : $row['url_type']);
 	echo '<tr><td>' . $row['url_type'] . ': <a href="http://musicbrainz.org/show/' . $row['url_type'] . '?' . $row['url_type'] . 'id=' . $row['thing_id'] . '">' . $row['name'] . '</a> ' .
 		($last = $row['linkphrase']) . '</td><td>' .
 		'[ <a href="http://musicbrainz.org/show/url/?urlid=' . $row['urlid'] . '">show</a> ] ' .
-		'[ <a href="http://musicbrainz.org/edit/url/edit.html?urlid=' . $row['urlid'] . '">edit</a> ] ' .
-		'[ <a href="http://musicbrainz.org/edit/relationship/remove.html?type=' . ($row['url_type'] == 'release' ? 'album' : $row['url_type']) . '-url&id=' . $row['link_id'] . '">remove</a> ] ' .
+		'[ <a href="http://musicbrainz.org/edit/url/edit.html?urlid=' . $row['urlid'] . '">edit url</a> ] ' .
+		'[ <a href="http://musicbrainz.org/edit/relationship/remove.html?type=' . $url_type_other . '-url&id=' . $row['link_id'] . '">rem. rel.</a> ] ' .
+		'[ <a href="http://musicbrainz.org/edit/relationship/edit.html?type=' . $url_type_other . '-url&id=' . $row['link_id'] . '">edit rel.</a> ] ' .
 		'<a href="' . $row['url'] . '">' . $row['url'] . '</a></td>' . "\n";
 }
 
