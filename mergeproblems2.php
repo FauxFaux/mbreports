@@ -259,7 +259,15 @@ foreach ($dat as $acname => $albs)
 		if (preg_match('/\(disc ([0-9]+)/', substr($alb['name'], $skip), $regs))
 			@++$discs[$regs[1]];
 
-	$high = max(array_keys($discs));
+	$ak = array_keys($discs);
+	if (count($ak))
+		$high = max($ak);
+	else
+	{
+		echo '<tr><td></td></tr><tr><td colspan="' . $span . '" style="border: 5px solid red; padding: .5em"><h1>Chronic FAIL, please report if it\'s unexpected:</h1><pre>';
+		var_dump($acname, $albs);
+		echo '</pre></td></tr>';
+	}
 
 	@$perfectdupes = $discs[2] > 1;
 	@$clean = $discs[1] == 1;

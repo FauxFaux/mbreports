@@ -86,7 +86,7 @@ while ($row = pg_fetch_assoc($res))
 
 
 $tranny = array();
-$res = pg_query("select link0,link1 from l_album_album where link_type = 15 and link0 in ($ids)");
+$res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or link_type = 2) and link0 in ($ids)");
 while ($row = pg_fetch_array($res))
 	$tranny[$row[0]] = $tranny[$row[1]] = true;
 
@@ -109,8 +109,8 @@ function side($id, $left = false)
 
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
-<p>Grey means some kind of dirty trans*ation is going on.</p>
-<p><?=count($collisions)?> hits. <?=$req_acc?>ms max difference per track.</p>
+<p>Grey means you should probably ignore the release due to ARs.</p>
+<p><?=count($collisions)?> hits (<?=count($tranny)?> albums (not lines) have excuses). <?=$req_acc?>ms max difference per track.</p>
 <p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
 <table>
 <?
