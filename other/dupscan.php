@@ -1,21 +1,23 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.95.</title>
+<title>Dupscan 1.96.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
 td.tranny { background-color: #ddd }
 td.error { background-color: #fcc }
 </style>
-</head><body>
+</head><body><iframe style="display: none" name="secret"></iframe>
 <?
 
 ini_set('max_execution_time', 0);
 
-$req_acc = 1500;
+$req_acc = 100;
 
 /*
+begin;
+drop table if exists dupscan_cache cascade;
 create table dupscan_cache as
 select track_count,simple_cd_hash(tracklist) as hash, tracklist, album
 from album_tracklist
@@ -23,6 +25,7 @@ where tracklist!='{0}'
 AND sum_array(tracklist)!=0
 order by track_count,hash;
 create index ponies on dupscan_cache(track_count);
+commit;
 */
 
 function breakup($thing)
@@ -87,6 +90,11 @@ $res = pg_query("select link0,link1 from l_album_album where link_type = 15 and 
 while ($row = pg_fetch_array($res))
 	$tranny[$row[0]] = $tranny[$row[1]] = true;
 
+function merge_button($id)
+{
+	return "<td><a href=\"http://musicbrainz.org/edit/albumbatch/done.html?releaseid{$id}=on\" class=\"mergebutton\" target=\"secret\">m</a></td>";
+}
+
 function side($id, $left = false)
 {
 	global $tranny, $lines;
@@ -94,24 +102,26 @@ function side($id, $left = false)
 			return '<td class="error">Album #' . $id . ' went missing! :o</td>';
 	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : '') . '>';
 	if (!$left)
-		return "$ret{$lines[$id][0]} {$lines[$id][1]}</td>";
+		return merge_button($id) . "$ret" . "{$lines[$id][0]} {$lines[$id][1]}</td>";
 	else
-		return "$ret{$lines[$id][1]} {$lines[$id][0]}</td>";
+		return "$ret{$lines[$id][1]} {$lines[$id][0]}</td>" . merge_button($id);
 }
 
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
 <p>Grey means some kind of dirty trans*ation is going on.</p>
-<p><?=count($collisions)?> hits. <?=$req_acc?>ms max difference per track. Longer cds (better matches) at the bottom.</p>
+<p><?=count($collisions)?> hits. <?=$req_acc?>ms max difference per track.</p>
+<p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
 <table>
 <?
 $prev = 0;
+
 foreach ($collisions as $from => $to)
 {
 	if ($from != $prev)
 		echo '<tr>' . side($from, true) . side($to) . "</tr>\n";
 	else
-		echo "<tr><td></td>" . side($to) . "</tr>\n";
+		echo "<tr><td></td><td></td>" . side($to) . "</tr>\n";
 	$prev = $to;
 }
 ?>
