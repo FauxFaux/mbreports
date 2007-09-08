@@ -1,6 +1,6 @@
 <?php
 
-pg_connect('host=brainzvm user=postgres dbname=musicbrainz_db');
+pg_connect('host=postaids user=postgres dbname=musicbrainz_db');
 
 $desc = array('artistnotype.php' => 'Artists with no type',
 	'barcodes999.php' => '13 digit barcodes starting with 99',
