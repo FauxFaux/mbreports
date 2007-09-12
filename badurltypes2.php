@@ -26,11 +26,18 @@ foreach ($types as $type)
 
 $ruledesc = array();
 
+$tools = $rules;
+
 foreach ($lttypes as $key => $lph)
 {
 	$b = isset($rules[$key]);
 	$ruledesc[] = ($b ? 'Rule' : '<span style="font-weight: bold">No rule</span>') . " for $key ('$lph')" . ($b ? ": <span style=\"font-family: monospace\">{$rules[$key]}</span>" : '') . '.';
+	unset($tools[$key]);
 }
+
+foreach ($tools as $key => $rule)
+	$ruledesc[] = "Unused rule for '$key'";
+
 sort($ruledesc);
 
 function gen_sql($thing)

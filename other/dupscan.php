@@ -99,7 +99,7 @@ function side($id, $left = false)
 {
 	global $tranny, $lines;
 	if (!isset($lines[$id]))
-			return '<td class="error">Album #' . $id . ' went missing! :o</td>';
+			return '<td colspan="2" class="error">Album #' . $id . ' went missing! :o</td>';
 	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : '') . '>';
 	if (!$left)
 		return merge_button($id) . "$ret" . "{$lines[$id][0]} {$lines[$id][1]}</td>";

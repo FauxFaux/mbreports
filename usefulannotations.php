@@ -2,13 +2,27 @@
 	td { border: 1px solid black }
 </style>
 <?
+ini_set('max_execution_time', 0);
 
 if (!isset($argv))
 	die ('See <a href="usefulannotations.html">the static version</a>.');
 
+
 require_once('database.inc.php');
 
-$res = pg_query("select rowid,album.name,text,releasedate,isocode as country,label,catno,barcode,format from annotation inner join album on (rowid = album.id) left join release on (release.album=rowid) join country on (country.id = release.country) where annotation.type=2 and label is null and text like 'Label%' order by name limit 400");
+$res = pg_query("select rowid,
+album.name,
+text,releasedate,isocode as country,label,catno,barcode,format
+	from annotation
+	inner join album on (rowid = album.id)
+	left join release on (release.album=rowid)
+	join country on (country.id = release.country)
+	where
+		annotation.type=2 and
+		label is null and
+		text like 'Label%'
+		order by text
+	limit 5000");
 
 echo '<p>' . pg_num_rows($res) . ' shown.</p>';
 

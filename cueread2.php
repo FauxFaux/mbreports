@@ -54,7 +54,7 @@ assert($track_count <= 99);
 if (@$track_count)
 	for ($i = 1; $i <= $track_count; ++$i)
 	{
-		$t = $_GET{$i};
+		$t = $_GET{$i} or $_GET{"0$i"};
 		$times_ms[$i-1] = is_numeric($t) ? (int)($t) : null;
 	}
 else
