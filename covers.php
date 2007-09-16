@@ -3,15 +3,16 @@ th,td { text-align: left; border: 1px solid black; padding: .4em }
 </style>
 <table>
 <?
-//CREATE INDEX track_hax_index ON track (name varchar_pattern_ops);
+//drop table if exists tracks_covers; create table tracks_covers as select track.id,track.name,length,artist.name as artist from track join artist on track.artist=artist.id where track.name ilike '%(%cover)%' order by name asc
 ini_set('max_execution_time', 0);
 header('Content-type: text/html; ; charset=utf-8');
 require_once('database.inc.php');
-$a = pg_query('select id,name,length from track where artist = 97546 and name ILIKE \'' . pg_escape_string(@$_GET{'prefix'}) . '%\' and length !=0 order by name asc');
+$a = pg_query('select id,name,length,artist from tracks_covers');
+
 while ($j = pg_fetch_assoc($a))
 {
 	$n = $j['name'];
-	echo "<tr><th colspan=\"2\"><a href=\"http://musicbrainz.org/show/track/?trackid={$j['id']}\">$n</a>";
+	echo "<tr><th colspan=\"2\">{$j['artist']} - <a href=\"http://musicbrainz.org/show/track/?trackid={$j['id']}\">$n</a>";
 	$n = preg_replace('/\(.*?\)/', '', $n);
 
 	if (!preg_match('/^([a-z0-9 ]{4,}?[a-z0-9]*)/i', $n, $prereg))
@@ -23,9 +24,7 @@ while ($j = pg_fetch_assoc($a))
 	}
 
 	$length = $j['length'];
-	echo ($length == 0 ? ' (no length)' : '') . "</th>";
-
-	//
+	echo ($length == 0 ? ' (no length, not working properly, ignore me for now ;))' : '') . "</th>";
 
 	$wiggle_room = 5000;
 
@@ -36,6 +35,7 @@ while ($j = pg_fetch_assoc($a))
 	{
 		echo "<tr><td style=\"text-align: right\">" . round($row['dist']/1000.0, 1) . "</td><td><a href=\"http://musicbrainz.org/show/track/?trackid={$row['id']}\">{$row['track']}</a> ({$row['artist']})</td></tr>";
 	}
+
 	if (microtime(true)-$begin > 2)
 		echo '<tr><td colspan="2">Disasterously slow query (' . round(microtime(true)-$begin) . ' seconds): ' . $query . '</td></tr>';
 }

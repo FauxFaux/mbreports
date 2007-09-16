@@ -2,23 +2,6 @@
 
 require_once('database.inc.php');
 
-// From release.pm, not avaliable elsewhere.
-$formats = array(
-	1 => 'cd',
-	2 => 'dvd',
-	3 => 'sacd',
-	4 => 'dualdisc',
-	5 => 'laserdisc',
-	6 => 'minidisc',
-	7 => 'vinyl',
-	8 => 'cassette',
-	9 => 'cartridge',
-	10 => 'reel to reel',
-	11 => 'dat',
-	12 => 'digital',
-	13 => 'other',
-);
-
 if (isset($_GET{'regenerate'}))
 {
 	ignore_user_abort(true);

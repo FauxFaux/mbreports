@@ -25,7 +25,6 @@ ALTER TABLE album_tracklist
 
 CREATE INDEX atltc
   ON album_tracklist
-  USING btree
   (track_count);
 
 COMMIT;

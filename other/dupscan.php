@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.96.</title>
+<title>Dupscan 1.97.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
@@ -23,6 +23,7 @@ select track_count,simple_cd_hash(tracklist) as hash, tracklist, album
 from album_tracklist
 where tracklist!='{0}'
 AND sum_array(tracklist)!=0
+AND track_count > 4
 order by track_count,hash;
 create index ponies on dupscan_cache(track_count);
 commit;
@@ -43,6 +44,7 @@ function equal(array $left, array $right)
 }
 
 require_once('../database.inc.php');
+
 //and not array_search(tracklist, 0)
 $res = pg_query('select distinct track_count from dupscan_cache where track_count > 4');
 $tcs = array();
@@ -99,7 +101,7 @@ function side($id, $left = false)
 {
 	global $tranny, $lines;
 	if (!isset($lines[$id]))
-			return '<td colspan="2" class="error">Album #' . $id . ' went missing! :o</td>';
+		return '<td colspan="2" class="error">Album #' . $id . ' went missing! :o</td>';
 	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : '') . '>';
 	if (!$left)
 		return merge_button($id) . "$ret" . "{$lines[$id][0]} {$lines[$id][1]}</td>";
@@ -107,10 +109,30 @@ function side($id, $left = false)
 		return "$ret{$lines[$id][1]} {$lines[$id][0]}</td>" . merge_button($id);
 }
 
+$ignore_url = 'http://wiki.musicbrainz.org/FauxFaux/NotDuplicateReleases';
+
+$ignored = array();
+preg_match_all('/releaseid=([0-9]+).+releaseid=([0-9]+)/',
+	file_get_contents("{$ignore_url}?action=raw", false,
+		stream_context_create(array('http' => array('method' => 'GET', 'header' => 'Authorization: Basic ' . base64_encode('mbwiki:mbwiki'))))
+	),
+$regs);
+
+foreach ($regs[1] as $ind => $left)
+	@$ignored[$left] = $regs[2][$ind];
+
+foreach ($collisions as $from => $to)
+	if (@$ignored[$from] == $to || @$ignored[$to] == $from)
+		unset($collisions[$from]);
+
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
 <p>Grey means you should probably ignore the release due to ARs.</p>
-<p><?=count($collisions)?> hits (<?=count($tranny)?> albums (not lines) have excuses). <?=$req_acc?>ms max difference per track.</p>
+<p><?=count($collisions)?> hits:<ul>
+	<li><?=count($tranny)?> albums (not lines) have excuses.</li>
+	<li><?=count($ignored)?> on the <a href="<?=$ignore_url?>">ignore list</a>.</li>
+</ul></p>
+<p><?=$req_acc?>ms max difference per track.</p>
 <p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
 <table>
 <?
@@ -118,6 +140,7 @@ $prev = 0;
 
 foreach ($collisions as $from => $to)
 {
+
 	if ($from != $prev)
 		echo '<tr>' . side($from, true) . side($to) . "</tr>\n";
 	else
@@ -126,6 +149,6 @@ foreach ($collisions as $from => $to)
 }
 ?>
 </table>
-<?echo "<p>Generated in " . (time()-$start) . " seconds (plus three minutes cache, plus twenty minutes pre-cache).</p>";?>
+<?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache).</p>";?>
 </body>
 </html>

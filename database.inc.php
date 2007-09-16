@@ -20,6 +20,7 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'cueread2.php' => 'Lookup by times (static cache)',
 	'usefulannotations.php' => '[fully static] Possibly useful annotations.',
 	'nonimgurls.php' => 'Coverart urls that don\'t end in image extensions',
+	'missinglabel.php' => 'Releases by ... with missing labels',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
 
@@ -47,3 +48,19 @@ function my_title()
 
 $start = time();
 
+// From release.pm, not avaliable elsewhere.
+$formats = array(
+	1 => 'cd',
+	2 => 'dvd',
+	3 => 'sacd',
+	4 => 'dualdisc',
+	5 => 'laserdisc',
+	6 => 'minidisc',
+	7 => 'vinyl',
+	8 => 'cassette',
+	9 => 'cartridge',
+	10 => 'reel to reel',
+	11 => 'dat',
+	12 => 'digital',
+	13 => 'other',
+);

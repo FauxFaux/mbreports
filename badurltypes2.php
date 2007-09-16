@@ -11,6 +11,8 @@ $rules = array(
 	'discogs' =>			"url NOT ILIKE 'http://%discogs.%/%'",
 	'purevolume' =>			"url NOT ILIKE 'http://www.purevolume.com/%'",
 	'myspace' =>			"url NOT ILIKE 'http://%myspace.com/%'",
+	'purchase for mail-order' => "url ILIKE 'http://%archive.org/%'",
+	'purchase for download' => "url ILIKE 'http://%archive.org/%'",
 	'wikipedia' =>			"url NOT ILIKE 'http://%wikipedia.org/%'"
 );
 
