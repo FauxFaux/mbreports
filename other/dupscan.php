@@ -5,13 +5,55 @@
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
-td.tranny { background-color: #ddd }
-td.error { background-color: #fcc }
+.tranny { background-color: #ddd }
+.error { background-color: #fcc }
+span.error { padding: .1em }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
 <?
 
 ini_set('max_execution_time', 0);
+
+class Set
+{
+	private $inside;
+	public function get($id = -1)
+	{
+		$t = array_keys($this->inside);
+		if ($id != -1)
+			return $t[$id];
+		return $t;
+	}
+
+	function add($key)
+	{
+		$this->inside[$key] = true;
+		ksort($this->inside);
+		return $this;
+	}
+
+	function remove($key)
+	{
+		if ($this->contains($key))
+			unset($this->inside[$key]);
+		return $this;
+	}
+
+	function contains($key)
+	{
+		return isset($this->inside[$key]);
+	}
+
+	function empty_()
+	{
+		return $this->count_() == 0;
+	}
+
+	function count_()
+	{
+		return count($this->inside);
+	}
+};
 
 $req_acc = 100;
 
@@ -72,7 +114,17 @@ foreach ($tcs as $track_count)
 		$this_album = $row['album'];
 
 		if (equal($last_broken, $this_broken))
-			@$collisions[$last_album] = $this_album;
+		{
+			if (isset($collisions[$last_album]))
+				$collisions[$last_album]->add($this_album);
+			else if (isset($collisions[$this_album]))
+				$collisions[$this_album]->add($last_album);
+			else
+			{
+				@$collisions[$this_album] = new Set();
+				$collisions[$this_album]->add($this_album)->add($last_album);
+			}
+		}
 
 		$last_album = $this_album;
 		$last_broken = $this_broken;
@@ -80,9 +132,20 @@ foreach ($tcs as $track_count)
 	//echo "<p>PONY$track_count (" . count($collisions) . ")</p>\n";
 }
 
+$collisions = array_values($collisions);
+
+$ids = array();
+
+foreach ($collisions as $col)
+{
+	$ids = array_merge($ids, $col->get());
+}
+
+$ids = implode(',', $ids);
+
 $lines = array();
 
-$res = pg_query("select album.id,album.name as album,artist.name as artist from album join artist on artist.id=album.artist where album.id in (" . ($ids = implode(',', array_merge(array_keys($collisions), $collisions))) . ")");
+$res = pg_query("select album.id,album.name as album,artist.name as artist from album join artist on artist.id=album.artist where album.id in ($ids)");
 while ($row = pg_fetch_assoc($res))
 	@$lines[$row['id']] = array("<a href=\"http://musicbrainz.org/show/release/?releaseid={$row['id']}\">{$row['album']}</a>", "({$row['artist']})");
 
@@ -90,7 +153,7 @@ while ($row = pg_fetch_assoc($res))
 $tranny = array();
 $res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or link_type = 2) and link0 in ($ids)");
 while ($row = pg_fetch_array($res))
-	$tranny[$row[0]] = $tranny[$row[1]] = true;
+	$tranny[$row[0]] = $row[1];
 
 function merge_button($id)
 {
@@ -121,34 +184,93 @@ $regs);
 foreach ($regs[1] as $ind => $left)
 	@$ignored[$left] = $regs[2][$ind];
 
-foreach ($collisions as $from => $to)
-	if (@$ignored[$from] == $to || @$ignored[$to] == $from)
-		unset($collisions[$from]);
+function remove_if($col, $left, $right)
+{
+	if ($col->contains($left) && $col->contains($right))
+		$col->remove($left)->remove($right);
+}
 
+foreach ($collisions as $col)
+{
+	foreach ($ignored as $left => $right)
+		remove_if($col, $left, $right);
+	foreach ($tranny as $left => $right)
+		remove_if($col, $left, $right);
+}
+
+$removes = 0;
+foreach ($collisions as $ind => $col)
+{
+	if ($col->empty_())
+	{
+		++$removes;
+		unset($collisions[$ind]);
+	}
+}
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
-<p>Grey means you should probably ignore the release due to ARs.</p>
 <p><?=count($collisions)?> hits:<ul>
-	<li><?=count($tranny)?> albums (not lines) have excuses.</li>
+	<li><?=count($tranny)?> pairs have relevant ARs and are excluded. (Releases in <span class="tranny">grey</span> have relevant ARs but have not been excluded by them).</li>
 	<li><?=count($ignored)?> on the <a href="<?=$ignore_url?>">ignore list</a>.</li>
+	<li> ... results in <?=$removes?> removals total.</li>
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
 <p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
-<table>
 <?
 $prev = 0;
 
-foreach ($collisions as $from => $to)
-{
+$oldcollisions = $collisions;
+$collisions = array();
 
-	if ($from != $prev)
-		echo '<tr>' . side($from, true) . side($to) . "</tr>\n";
-	else
-		echo "<tr><td></td><td></td>" . side($to) . "</tr>\n";
-	$prev = $to;
+$overtwo = array();
+$ones = array();
+
+function miniside($id)
+{
+	global $lines;
+	if (!isset($lines[$id]))
+		return '<span class="error">Album #' . $id . ' went missing! :o</span>';
+	return $lines[$id][0] . ' - ' . $lines[$id][1];
 }
+
+foreach ($oldcollisions as $ind => $col)
+	if ($col->count_() > 2)
+	{
+		$s = array();
+		foreach ($col->get() as $alb)
+			$s[] = miniside($alb);
+		$overtwo[] = $s;
+	}
+	else if ($col->count_() == 1)
+		$ones[] = miniside($col->get(0));
+	else
+		$collisions[$col->get(0)] = $col->get(1);
+
+echo '<h3>Pairs that confuse me. :( (' . count($collisions) .' total)</h3><table>';
+
+foreach ($collisions as $left => $right)
+{
+	echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
+}
+
 ?>
 </table>
+
+<h2>Odd Numbers</h2>
+<p>Things are probably here because they're more duplicated than normal, or when there's only one item, the others have been stolen by trans*ation, it probably needs an AR too.</p>
+<h3>Over two (<?=count($overtwo)?> total)</h3>
+<?
+foreach ($overtwo as $list)
+{
+	natcasesort($list);
+	echo '<hr /><ul><li>' . implode('</li><li>', $list) . '</li></ul>';
+}
+
+echo '<h3>Just one (' . count($ones) .' total)</h3>' .
+	'<hr /><ul><li>' . implode('</li><li>', $ones) . '</li></ul>';
+
+?>
+
 <?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache).</p>";?>
 </body>
 </html>
