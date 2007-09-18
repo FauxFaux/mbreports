@@ -21,6 +21,7 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'usefulannotations.php' => '[fully static] Possibly useful annotations.',
 	'nonimgurls.php' => 'Coverart urls that don\'t end in image extensions',
 	'missinglabel.php' => 'Releases by ... with missing labels',
+	'duplicatelive.php' => 'Possibly duplicate live releases',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
 
