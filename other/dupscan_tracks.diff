@@ -1,0 +1,46 @@
+Index: dupscan.php
+===================================================================
+--- dupscan.php	(revision 51)
++++ dupscan.php	(working copy)
+@@ -149,6 +149,11 @@
+ while ($row = pg_fetch_assoc($res))
+ 	@$lines[$row['id']] = array("<a href=\"http://musicbrainz.org/show/release/?releaseid={$row['id']}\">{$row['album']}</a>", "({$row['artist']})");
+ 
++$tracks = array();
++die("select album,track.name from albumjoin join track on track.id = albumjoin.track where album in ($ids) order by sequence ");
++$res = pg_query("select album,track.name from albumjoin join track on track.id = albumjoin.track where album in ($ids) order by sequence ");
++while ($row = pg_fetch_assoc($res))
++	@$tracks[$row['album']][] = $row['name'];
+ 
+ $tranny = array();
+ $res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or link_type = 2) and link0 in ($ids)");
+@@ -248,6 +253,29 @@
+ 
+ echo '<h3>Pairs that confuse me. :( (' . count($collisions) .' total)</h3><table>';
+ 
++function compare($left, $right)
++{
++	return $left != $right;
++}
++
++function compare_albums($left, $right)
++{
++	global $tracks;
++	$score = 0;
++	foreach ($tracks[$left] as $ind => $track)
++		$score += compare($track, $tracks[$right][$ind]);
++	return $score/count($tracks[$left]);
++}
++
++function similarity_compare($left, $right)
++{
++	global $collisions;
++	return compare_albums($collisions[$left], $left) -
++		compare_albums($collisions[$right], $right);
++}
++
++uksort($collisions, 'similarity_compare');
++
+ foreach ($collisions as $left => $right)
+ {
+ 	echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
