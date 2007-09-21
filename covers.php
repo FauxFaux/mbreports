@@ -3,11 +3,22 @@ th,td { text-align: left; border: 1px solid black; padding: .4em }
 </style>
 <table>
 <?
-//drop table if exists tracks_covers; create table tracks_covers as select track.id,track.name,length,artist.name as artist from track join artist on track.artist=artist.id where track.name ilike '%(%cover)%' order by name asc
 ini_set('max_execution_time', 0);
+
 header('Content-type: text/html; ; charset=utf-8');
 require_once('database.inc.php');
-$a = pg_query('select id,name,length,artist from tracks_covers');
+
+if (isset($_GET{'regenerate'}))
+{
+	ignore_user_abort(true);
+	$res = pg_query("begin; drop table if exists tracks_covers; create table tracks_covers as select track.id,track.name,length,artist.name as artist from track join artist on track.artist=artist.id where track.name ilike '%(%cover)%' order by name asc; commit;");
+	die('Done.');
+}
+
+echo '<p><a href="?regenerate">Regenerate cache</a></p>';
+
+@$pf = pg_escape_string($_GET{'prefix'});
+$a = pg_query("select id,name,length,artist from tracks_covers where name ilike '$pf%'");
 
 while ($j = pg_fetch_assoc($a))
 {
