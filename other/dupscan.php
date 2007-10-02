@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.992.</title>
+<title>Dupscan 1.993.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
@@ -10,6 +10,7 @@ table tr th { padding: 2em; font-size: 200% }
 .error { background-color: #fcc }
 .near { background-color: #ccf; border: 2px dashed black }
 .wsnw { white-space: nowrap }
+.bold { font-weight: bold }
 span.error,span.near { padding: .1em }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
@@ -145,12 +146,14 @@ $ids = implode(',', $ids);
 
 $lines = array();
 $lang = array();
+$albartid = array();
 
-$res = pg_query("select album.id,album.name as album,artist.name as artist, \"language\", script from album join artist on artist.id=album.artist where album.id in ($ids)");
+$res = pg_query("select album.id,album.name as album,artist.name as artist, \"language\", script, artist.id as aid from album join artist on artist.id=album.artist where album.id in ($ids)");
 while ($row = pg_fetch_assoc($res))
 {
 	@$lines[$row['id']] = array($row['album'], $row['artist']);
 	@$lang[$row['id']] = array($row['language'], $row['script']);
+	@$albartid[$row['id']] = $row['aid'];
 }
 
 $tranny = array();
@@ -158,10 +161,15 @@ $res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or 
 while ($row = pg_fetch_array($res))
 	$tranny[$row[0]] = $row[1];
 
+$va = array();
 $tracks = array();
-$res = pg_query("select album,sequence,name from track join albumjoin on track.id = albumjoin.track where album in ($ids) order by album,sequence");
+$res = pg_query("select album,sequence,name,artist from track join albumjoin on track.id = albumjoin.track where album in ($ids) order by album,sequence");
 while ($row = pg_fetch_array($res))
+{
 	$tracks[$row[0]][$row[1]] = $row[2];
+	@$va[$row[0]] |= $row[3] != $albartid[$row[0]];
+}
+
 
 function album_link($id)
 {
@@ -219,8 +227,8 @@ foreach ($collisions as $ind => $col)
 
 $checks = array(
 	'identical_trli' => 'Identical track-lists',
-	'artist_disp' => 'Artist disputes',
 	'diff_lang' => 'Probable missing trans*ation ARs',
+	'artist_disp' => 'Artist disputes',
 	'identical_albs' => 'Identical (heh heh heh)',
 	'other_albs' => 'Other pairs'
 );
@@ -234,6 +242,12 @@ $checks = array(
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
 <p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age.</p>
+<p>Buttons in the middle:<ul>
+	<li>s - Direct link to the single-artist merge page for these two releases.</li>
+	<li>v - Direct link to the VA merge page, check these carefully, <span class="bold">the artists on VA tracks are not checked</span>.</li>
+	<li>m - Show the merge page for these two releases, one is VA, the other is not.</li>
+	<li>r - Direct link to the add relationship page for these two releases.</li>
+</ul></p>
 <p><a name="index"></a><ul>
 <?
 
@@ -328,7 +342,13 @@ function seperate_by($f, array $arr)
 
 function merge_button($left, $right)
 {
-	return "<a href=\"http://musicbrainz.org/edit/albumbatch/done.html?releaseid{$left}=on&releaseid{$right}=on\" class=\"mergebutton\">m</a>";
+	global $va;
+	if ($va[$left] != $va[$right])
+		return "<a href=\"http://musicbrainz.org/edit/albumbatch/done.html?releaseid{$left}=on&releaseid{$right}=on\" class=\"mergebutton\" title=\"merge mixed releases\">m</a>";
+	if ($va[$left])
+		return "<a href=\"http://musicbrainz.org/edit/albumbatch/merge.html?releaseid={$left}&releaseid={$right}&mac=1\" class=\"mergebutton\" title=\"merge VA releases\">v</a>";
+	else
+		return "<a href=\"http://musicbrainz.org/edit/albumbatch/merge.html?releaseid={$left}&releaseid={$right}&mac=0\" class=\"mergebutton\" title=\"merge single artist releases\">s</a>";
 }
 
 function relate($left, $right)
@@ -380,8 +400,6 @@ function buttons($left, $right)
 		merge_button($left, $right) . ' - ' . relate($left, $right) . ' - ' . similarity($left, $right) .
 		'</td>';
 }
-
-
 
 ksort($collisions);
 
