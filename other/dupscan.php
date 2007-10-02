@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.99.</title>
+<title>Dupscan 1.992.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
@@ -9,6 +9,7 @@ table tr th { padding: 2em; font-size: 200% }
 .tranny { background-color: #ddd }
 .error { background-color: #fcc }
 .near { background-color: #ccf; border: 2px dashed black }
+.wsnw { white-space: nowrap }
 span.error,span.near { padding: .1em }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
@@ -157,10 +158,10 @@ $res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or 
 while ($row = pg_fetch_array($res))
 	$tranny[$row[0]] = $row[1];
 
-function merge_button($id)
-{
-	return "<td><a href=\"http://musicbrainz.org/edit/albumbatch/done.html?releaseid{$id}=on\" class=\"mergebutton\" target=\"secret\">m</a></td>";
-}
+$tracks = array();
+$res = pg_query("select album,sequence,name from track join albumjoin on track.id = albumjoin.track where album in ($ids) order by album,sequence");
+while ($row = pg_fetch_array($res))
+	$tracks[$row[0]][$row[1]] = $row[2];
 
 function album_link($id)
 {
@@ -172,12 +173,12 @@ function side($id, $left = false)
 {
 	global $tranny, $lines;
 	if (!isset($lines[$id]))
-		return '<td colspan="2" class="error">Album #' . $id . ' went missing! :o</td>';
+		return '<td class="error">Album #' . $id . ' went missing! :o</td>';
 	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : '') . '>';
 	if (!$left)
-		return merge_button($id) . "$ret" . album_link($id) . " ({$lines[$id][1]})</td>";
+		return "$ret" . album_link($id) . " ({$lines[$id][1]})</td>";
 	else
-		return "$ret({$lines[$id][1]}) " . album_link($id) . "</td>" . merge_button($id);
+		return "$ret({$lines[$id][1]}) " . album_link($id) . "</td>";
 }
 
 $ignore_url = 'http://wiki.musicbrainz.org/FauxFaux/NotDuplicateReleases';
@@ -217,8 +218,9 @@ foreach ($collisions as $ind => $col)
 }
 
 $checks = array(
-	'diff_lang' => 'Probable missing trans*ation ARs',
+	'identical_trli' => 'Identical track-lists',
 	'artist_disp' => 'Artist disputes',
+	'diff_lang' => 'Probable missing trans*ation ARs',
 	'identical_albs' => 'Identical (heh heh heh)',
 	'other_albs' => 'Other pairs'
 );
@@ -231,8 +233,7 @@ $checks = array(
 	<li> ... results in <?=$removes?> removals total.</li>
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
-<p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
-<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents.</p>
+<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age.</p>
 <p><a name="index"></a><ul>
 <?
 
@@ -271,11 +272,6 @@ foreach ($oldcollisions as $ind => $col)
 
 echo '<table>';
 
-function relate($left, $right)
-{
-	return "<td" . (abs($left - $right) < 4 ? ' class="near"' : '') . "><a href=\"http://musicbrainz.org/edit/relationship/add.html?link0=album=$left&link1=album=$right\" target=\"none\">r</a></td>";
-}
-
 function diff_lang($left, $right)
 {
 	global $lang;
@@ -293,6 +289,19 @@ function artist_disp($left, $right)
 			|| $lines[$left][0] == $lines[$right][0]
 		)
 	);
+}
+
+function identical_trli($left, $right)
+{
+	global $tracks;
+	$tl = $tracks[$left];
+	$tr = $tracks[$right];
+	$tn = count($tl);
+	$tt = 0.0;
+	foreach ($tl as $ind => $l)
+		if ($l != $tr[$ind])
+			return false;
+	return true;
 }
 
 function identical_albs($left, $right)
@@ -317,6 +326,62 @@ function seperate_by($f, array $arr)
 	return array($out, $in);
 }
 
+function merge_button($left, $right)
+{
+	return "<a href=\"http://musicbrainz.org/edit/albumbatch/done.html?releaseid{$left}=on&releaseid{$right}=on\" class=\"mergebutton\">m</a>";
+}
+
+function relate($left, $right)
+{
+	return "<a href=\"http://musicbrainz.org/edit/relationship/add.html?link0=album=$left&link1=album=$right\">r</a>";
+}
+
+function image_img_for($token, $amount)
+{
+	return "<img src=\"match-$token.png\" alt=\"" . round($amount) . '% track-list match" />';
+}
+
+function image_for($amount)
+{
+	foreach (array(100, 90, 80, 70, 60) as $num)
+		if ($amount >= $num)
+			return image_img_for($num, $amount);
+	return image_img_for(50, $amount);
+}
+
+function similarity($left, $right)
+{
+	global $tracks;
+	$tl = $tracks[$left];
+	$tr = $tracks[$right];
+	$tn = count($tl);
+	$tt = 0.0;
+	foreach ($tl as $ind => $l)
+	{
+		$r = $tr[$ind];
+/*
+		$non_ascii = '/[\x80-\zff]/';
+		if (preg_match($non_ascii, $l) ||
+			preg_match($non_ascii, $r))
+			return '<abbr title="Cowardly confusing to compare non-ASCII texts">NA</abbr>';
+*/
+		$p = 0;
+		// Return into $p, float percentage <=100.
+		similar_text($l, $r, $p);
+		$tt += $p;
+	}
+
+	return image_for($tt / (float)$tn);
+}
+
+function buttons($left, $right)
+{
+	return "<td class=\"wsnw" . (abs($left - $right) < 4 ? ' near"' : '"') . ">" .
+		merge_button($left, $right) . ' - ' . relate($left, $right) . ' - ' . similarity($left, $right) .
+		'</td>';
+}
+
+
 
 ksort($collisions);
 
@@ -325,7 +390,7 @@ foreach ($checks as $func => $title)
 	list($collisions, $this_iter) = seperate_by($func, $collisions);
 	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total)</th></tr>";
 	foreach ($this_iter as $left => $right)
-		echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
+		echo '<tr>' . side($left, true) . buttons($left, $right) . side($right) . "</tr>\n";
 }
 
 ?>
