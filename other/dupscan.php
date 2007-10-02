@@ -131,7 +131,6 @@ foreach ($tcs as $track_count)
 		$last_album = $this_album;
 		$last_broken = $this_broken;
 	}
-	//echo "<p>PONY$track_count (" . count($collisions) . ")</p>\n";
 }
 
 $collisions = array_values($collisions);
@@ -139,9 +138,7 @@ $collisions = array_values($collisions);
 $ids = array();
 
 foreach ($collisions as $col)
-{
 	$ids = array_merge($ids, $col->get());
-}
 
 $ids = implode(',', $ids);
 
@@ -218,6 +215,14 @@ foreach ($collisions as $ind => $col)
 		unset($collisions[$ind]);
 	}
 }
+
+$checks = array(
+	'diff_lang' => 'Probable missing trans*ation ARs',
+	'artist_disp' => 'Artist disputes',
+	'identical_albs' => 'Identical (heh heh heh)',
+	'other_albs' => 'Other pairs'
+);
+
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
 <p><?=count($collisions)?> hits:<ul>
@@ -228,14 +233,13 @@ foreach ($collisions as $ind => $col)
 <p><?=$req_acc?>ms max difference per track.</p>
 <p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
 <p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents.</p>
-<p><ul>
-<li><a href="#trans">Missing trans*ation ARs</a></li>
-<li><a href="#artdis">Artist disputes</a></li>
-<li><a href="#ident">Identical (ish)</a></li>
-<li><a href="#other">Others</a></li>
-<li><a href="#odd">Odd Numbers</a></li>
-</ul>
+<p><a name="index"></a><ul>
 <?
+
+foreach ($checks as $key => $title)
+	echo "<li><a href=\"#$key\">$title</a></li>\n";
+echo '</ul>';
+
 $prev = 0;
 
 $oldcollisions = $collisions;
@@ -272,78 +276,56 @@ function relate($left, $right)
 	return "<td" . (abs($left - $right) < 4 ? ' class="near"' : '') . "><a href=\"http://musicbrainz.org/edit/relationship/add.html?link0=album=$left&link1=album=$right\" target=\"none\">r</a></td>";
 }
 
+function diff_lang($left, $right)
 {
-	ob_start(); $count = 0; // HAHAHAHAHAHHAHA EVIl
-
-	foreach ($collisions as $left => $right)
-	{
-		if ($lang[$left] != $lang[$right])
-		{
-			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
-			++$count;
-			unset($collisions[$left]);
-		}
-	}
-
-	$s = ob_get_contents();
-	ob_end_clean();
-	echo "<tr><th colspan=\"5\"><a name=\"trans\"/>Probable missing trans*ation ARs ($count total)</th></tr>";
-	echo $s;
+	global $lang;
+	return $lang[$left] && $lang[$right] && $lang[$left] != $lang[$right];
 }
 
+function artist_disp($left, $right)
 {
-	ob_start(); $count = 0;
-
-	foreach ($collisions as $left => $right)
-	{
-		$al = $lines[$left][1];
-		$ar = $lines[$right][1];
-		if (($al != $ar) &&
-			(
-				(strpos($al, $ar) !== false || strpos($ar, $al) !== false)
-				|| $lines[$left][0] == $lines[$right][0]
-			)
+	global $lines;
+	$al = $lines[$left][1];
+	$ar = $lines[$right][1];
+	return (($al != $ar) &&
+		(
+			(strpos($al, $ar) !== false || strpos($ar, $al) !== false)
+			|| $lines[$left][0] == $lines[$right][0]
 		)
-		{
-			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
-			++$count;
-			unset($collisions[$left]);
-		}
-	}
-
-	$s = ob_get_contents();
-	ob_end_clean();
-	echo "<tr><th colspan=\"5\"><a name=\"artdis\"/>Artist disputes ($count total)</th></tr>";
-	echo $s;
+	);
 }
 
+function identical_albs($left, $right)
 {
-	ob_start(); $count = 0;
+	global $lines;
+	return $lines[$left][0] == $lines[$right][0];
+}
 
-	foreach ($collisions as $left => $right)
-	{
-		$al = $lines[$left][1];
-		$ar = $lines[$right][1];
-		if ($lines[$left][0] == $lines[$right][0])
-		{
-			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
-			++$count;
-			unset($collisions[$left]);
-		}
-	}
+function other_albs($left, $right)
+{
+	return true;
+}
 
-	$s = ob_get_contents();
-	ob_end_clean();
-	echo "<tr><th colspan=\"5\"><a name=\"ident\"/>Identical (heh heh heh) ($count total)</th></tr>";
-	echo $s;
+function seperate_by($f, array $arr)
+{
+	$in = $out = array();
+	foreach ($arr as $left => $right)
+		if (call_user_func($f, $left, $right))
+			$in[$left] = $right;
+		else
+			$out[$left] = $right;
+	return array($out, $in);
 }
 
 
-echo '<tr><th colspan="5"><a name="other"/>Pairs that confuse me. :( (' . count($collisions) .' total)</th></tr>';
+ksort($collisions);
 
-foreach ($collisions as $left => $right)
+foreach ($checks as $func => $title)
 {
-	echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
+	list($collisions, $this_iter) = seperate_by($func, $collisions);
+	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total)</th></tr>";
+	foreach ($this_iter as $left => $right)
+		echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
 }
 
 ?>
