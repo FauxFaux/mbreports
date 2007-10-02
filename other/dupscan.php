@@ -1,14 +1,15 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.98.</title>
+<title>Dupscan 1.99.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
 table tr th { padding: 2em; font-size: 200% }
 .tranny { background-color: #ddd }
 .error { background-color: #fcc }
-span.error { padding: .1em }
+.near { background-color: #ccf; border: 2px dashed black }
+span.error,span.near { padding: .1em }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
 <?
@@ -226,6 +227,7 @@ foreach ($collisions as $ind => $col)
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
 <p>Usage hint: The "m" button will add the release to the <a href="http://musicbrainz.org/edit/albumbatch/done.html">Release batch operations</a> page (no need to wait for whatever you browser tells you it&apos;s loading). Middle(or shift)-clicking the "m" button will add the release, <i>and</i> open the <a href="http://musicbrainz.org/edit/albumbatch/done.html">batch operations page</a> in a new tab/window.</p>
+<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents.</p>
 <p><ul>
 <li><a href="#trans">Missing trans*ation ARs</a></li>
 <li><a href="#artdis">Artist disputes</a></li>
@@ -265,6 +267,11 @@ foreach ($oldcollisions as $ind => $col)
 
 echo '<table>';
 
+function relate($left, $right)
+{
+	return "<td" . (abs($left - $right) < 4 ? ' class="near"' : '') . "><a href=\"http://musicbrainz.org/edit/relationship/add.html?link0=album=$left&link1=album=$right\" target=\"none\">r</a></td>";
+}
+
 {
 	ob_start(); $count = 0; // HAHAHAHAHAHHAHA EVIl
 
@@ -272,7 +279,7 @@ echo '<table>';
 	{
 		if ($lang[$left] != $lang[$right])
 		{
-			echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
+			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
 			++$count;
 			unset($collisions[$left]);
 		}
@@ -280,7 +287,7 @@ echo '<table>';
 
 	$s = ob_get_contents();
 	ob_end_clean();
-	echo "<tr><th colspan=\"4\"><a name=\"trans\"/>Probable missing trans*ation ARs ($count total)</th></tr>";
+	echo "<tr><th colspan=\"5\"><a name=\"trans\"/>Probable missing trans*ation ARs ($count total)</th></tr>";
 	echo $s;
 }
 
@@ -298,7 +305,7 @@ echo '<table>';
 			)
 		)
 		{
-			echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
+			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
 			++$count;
 			unset($collisions[$left]);
 		}
@@ -306,7 +313,7 @@ echo '<table>';
 
 	$s = ob_get_contents();
 	ob_end_clean();
-	echo "<tr><th colspan=\"4\"><a name=\"artdis\"/>Artist disputes ($count total)</th></tr>";
+	echo "<tr><th colspan=\"5\"><a name=\"artdis\"/>Artist disputes ($count total)</th></tr>";
 	echo $s;
 }
 
@@ -319,7 +326,7 @@ echo '<table>';
 		$ar = $lines[$right][1];
 		if ($lines[$left][0] == $lines[$right][0])
 		{
-			echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
+			echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
 			++$count;
 			unset($collisions[$left]);
 		}
@@ -327,16 +334,16 @@ echo '<table>';
 
 	$s = ob_get_contents();
 	ob_end_clean();
-	echo "<tr><th colspan=\"4\"><a name=\"ident\"/>Identical (heh heh heh) ($count total)</th></tr>";
+	echo "<tr><th colspan=\"5\"><a name=\"ident\"/>Identical (heh heh heh) ($count total)</th></tr>";
 	echo $s;
 }
 
 
-echo '<tr><th colspan="4"><a name="other"/>Pairs that confuse me. :( (' . count($collisions) .' total)</th></tr>';
+echo '<tr><th colspan="5"><a name="other"/>Pairs that confuse me. :( (' . count($collisions) .' total)</th></tr>';
 
 foreach ($collisions as $left => $right)
 {
-	echo '<tr>' . side($left, true) . side($right) . "</tr>\n";
+	echo '<tr>' . side($left, true) . relate($left, $right) . side($right) . "</tr>\n";
 }
 
 ?>
@@ -357,6 +364,6 @@ echo '<h3>Just one (' . count($ones) .' total)</h3>' .
 
 ?>
 
-<?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache).</p>";?>
+<?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache) on the " . date('jS \of F Y') . ".</p>";?>
 </body>
 </html>
