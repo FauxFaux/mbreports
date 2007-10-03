@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.993.</title>
+<title>Dupscan 1.994.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
@@ -11,6 +11,7 @@ table tr th { padding: 2em; font-size: 200% }
 .near { background-color: #ccf; border: 2px dashed black }
 .wsnw { white-space: nowrap }
 .bold { font-weight: bold }
+.modpending { background-color: #ffffcc }
 span.error,span.near { padding: .1em }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
@@ -60,20 +61,6 @@ class Set
 };
 
 $req_acc = 100;
-
-/*
-begin;
-drop table if exists dupscan_cache cascade;
-create table dupscan_cache as
-select track_count,simple_cd_hash(tracklist) as hash, tracklist, album
-from album_tracklist
-where tracklist!='{0}'
-AND sum_array(tracklist)!=0
-AND track_count > 4
-order by track_count,hash;
-create index ponies on dupscan_cache(track_count);
-commit;
-*/
 
 function breakup($thing)
 {
@@ -147,13 +134,15 @@ $ids = implode(',', $ids);
 $lines = array();
 $lang = array();
 $albartid = array();
+$modpendign = array();
 
-$res = pg_query("select album.id,album.name as album,artist.name as artist, \"language\", script, artist.id as aid from album join artist on artist.id=album.artist where album.id in ($ids)");
+$res = pg_query("select album.id,album.name as album,artist.name as artist, \"language\", script, artist.id as aid,album.modpending from album join artist on artist.id=album.artist where album.id in ($ids)");
 while ($row = pg_fetch_assoc($res))
 {
 	@$lines[$row['id']] = array($row['album'], $row['artist']);
 	@$lang[$row['id']] = array($row['language'], $row['script']);
 	@$albartid[$row['id']] = $row['aid'];
+	@$modpending[$row['id']] = $row['modpending'];
 }
 
 $tranny = array();
@@ -179,10 +168,10 @@ function album_link($id)
 
 function side($id, $left = false)
 {
-	global $tranny, $lines;
+	global $tranny, $lines, $modpending;
 	if (!isset($lines[$id]))
 		return '<td class="error">Album #' . $id . ' went missing! :o</td>';
-	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : '') . '>';
+	$ret = '<td' . (@$tranny[$id] ? ' class="tranny"' : (@$modpending[$id] ? ' class="modpending"' : '')) . '>';
 	if (!$left)
 		return "$ret" . album_link($id) . " ({$lines[$id][1]})</td>";
 	else
@@ -408,7 +397,12 @@ foreach ($checks as $func => $title)
 	list($collisions, $this_iter) = seperate_by($func, $collisions);
 	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total)</th></tr>";
 	foreach ($this_iter as $left => $right)
+	{
+		// Ensure the longest are always on the same side, assist the browser slightly.
+		if (strlen(side($left)) > strlen(side($right)))
+			{ $t = $left; $left = $right; $right = $t; }
 		echo '<tr>' . side($left, true) . buttons($left, $right) . side($right) . "</tr>\n";
+	}
 }
 
 ?>
@@ -429,6 +423,6 @@ echo '<h3>Just one (' . count($ones) .' total)</h3>' .
 
 ?>
 
-<?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache) on the " . date('jS \of F Y') . ".</p>";?>
+<?echo "<p>Generated in " . (time()-$start) . " seconds (plus ten minutes or so of cache) at " . date('g:i:sa \o\n \t\h\e jS \of F, Y') . ".</p>";?>
 </body>
 </html>

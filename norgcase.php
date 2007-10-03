@@ -2,7 +2,7 @@
 require_once('database.inc.php');
 my_title();
 
-ini_set('max_execution_time', 50);
+ini_set('max_execution_time', 120);
 
 ?><ul><?
 
@@ -13,6 +13,7 @@ while ($row = pg_fetch_assoc($res))
 	$albs[$row['id']] = $row['name'];
 
 $ids = implode(',', array_keys($albs));
+
 $res = pg_query("select track.id,track.name,albumjoin.album,sequence from track join albumjoin on track.id=albumjoin.track where album in ($ids) order by album, sequence");
 
 $hits = 0;

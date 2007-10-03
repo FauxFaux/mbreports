@@ -10,25 +10,6 @@ CREATE AGGREGATE array_accum (
 	initcond = '{}'
 );
 
-BEGIN;
-create temporary view album_tracklen as select albumjoin.album,albumjoin.sequence,length from track join albumjoin on (track.id = albumjoin.track) order by albumjoin.sequence;
-create temporary view album_trackponies as select album,array_accum(length) as tracklist from album_tracklen group by album;
-drop table if exists album_tracklist cascade;
-create table album_tracklist as select album,tracklist,array_upper(tracklist, 1) as track_count from album_trackponies;
-
-
-ALTER TABLE album_tracklist
-  ADD CONSTRAINT album_tracklist_pkey PRIMARY KEY(album);
-
-
--- DROP INDEX atltc;
-
-CREATE INDEX atltc
-  ON album_tracklist
-  (track_count);
-
-COMMIT;
- * This could take of the order of 20 minutes to run.
  */
 
 require_once('database.inc.php');
