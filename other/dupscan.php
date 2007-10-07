@@ -12,7 +12,8 @@ table tr th { padding: 2em; font-size: 200% }
 .wsnw { white-space: nowrap }
 .bold { font-weight: bold }
 .modpending { background-color: #ffffcc }
-span.error,span.near { padding: .1em }
+span.error,span.near,span.modpending { padding: .1em }
+span.modpending { border: 1px solid black }
 </style>
 </head><body><iframe style="display: none" name="secret"></iframe>
 <?
@@ -216,9 +217,10 @@ foreach ($collisions as $ind => $col)
 
 $checks = array(
 	'identical_trli' => 'Identical track-lists',
+	'nosymbol_idetntical_trli' => 'Identical <abbr title="Symbols, case etc. ignored">normalised</abbr> track-lists',
 	'diff_lang' => 'Probable missing trans*ation ARs',
 	'artist_disp' => 'Artist disputes',
-	'identical_albs' => 'Identical (heh heh heh)',
+	'identical_albs' => 'Identical title/artist',
 	'other_albs' => 'Other pairs'
 );
 
@@ -230,7 +232,7 @@ $checks = array(
 	<li> ... results in <?=$removes?> removals total.</li>
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
-<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age.</p>
+<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age. Edits in <span class="modpending">yellow</span> have pending edits.</p>
 <p>Buttons in the middle:<ul>
 	<li>s - Direct link to the single-artist merge page for these two releases.</li>
 	<li>v - Direct link to the VA merge page, check these carefully, <span class="bold">the artists on VA tracks are not checked</span>.</li>
@@ -242,7 +244,7 @@ $checks = array(
 
 foreach ($checks as $key => $title)
 	echo "<li><a href=\"#$key\">$title</a></li>\n";
-echo '</ul>';
+echo '<li><a href="#odd">Odd numbers</a></li></ul>';
 
 $prev = 0;
 
@@ -299,10 +301,27 @@ function identical_trli($left, $right)
 	global $tracks;
 	$tl = $tracks[$left];
 	$tr = $tracks[$right];
-	$tn = count($tl);
-	$tt = 0.0;
+
 	foreach ($tl as $ind => $l)
 		if ($l != $tr[$ind])
+			return false;
+	return true;
+}
+
+function strip_symbolsw($str)
+{
+	// Yeah, I know, this sucks:
+	return mb_strtolower(preg_replace('/[^\pL\pN]+/u', '', $str), 'utf-8');
+}
+
+function nosymbol_idetntical_trli($left, $right)
+{
+	global $tracks;
+	$tl = $tracks[$left];
+	$tr = $tracks[$right];
+
+	foreach ($tl as $ind => $l)
+		if (strip_symbolsw($l) != strip_symbolsw($tr[$ind]))
 			return false;
 	return true;
 }
@@ -395,7 +414,7 @@ ksort($collisions);
 foreach ($checks as $func => $title)
 {
 	list($collisions, $this_iter) = seperate_by($func, $collisions);
-	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total)</th></tr>";
+	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total) <a href=\"#index\" title=\"Return to index\">^</a></th></tr>";
 	foreach ($this_iter as $left => $right)
 	{
 		// Ensure the longest are always on the same side, assist the browser slightly.
