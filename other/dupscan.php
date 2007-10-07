@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Dupscan 1.994.</title>
+<title>Dupscan 1.995.</title>
 <style type="text/css">
 table tr td { border: 1px solid black; padding: .5em }
 table tr td:first-child { text-align: right }
@@ -232,7 +232,7 @@ $checks = array(
 	<li> ... results in <?=$removes?> removals total.</li>
 </ul></p>
 <p><?=$req_acc?>ms max difference per track.</p>
-<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age. Edits in <span class="modpending">yellow</span> have pending edits.</p>
+<p>Releases in <span class="near">blue/dashed</span> were added very close to each other and hence are more likely to be accidents. All sorted by age. Releases in <span class="modpending">yellow</span> have pending edits.</p>
 <p>Buttons in the middle:<ul>
 	<li>s - Direct link to the single-artist merge page for these two releases.</li>
 	<li>v - Direct link to the VA merge page, check these carefully, <span class="bold">the artists on VA tracks are not checked</span>.</li>
