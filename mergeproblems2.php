@@ -247,7 +247,7 @@ foreach ($dat as $acname => $albs)
 		$high = max($ak);
 	else
 	{
-		echo '<tr><td></td></tr><tr><td colspan="' . $span . '" style="border: 5px solid red; padding: .5em"><h1>Chronic FAIL, please report if it\'s unexpected:</h1><pre>';
+		echo '<tr><td></td></tr><tr><td colspan="' . $span . '" style="border: 5px solid red; padding: .5em"><h1>Chronic FAIL. This is probably the result of the disc-numbers being against style in some unexpected way. Please fix them, or report this page if it\'s unexpected:</h1><pre>';
 		var_dump($acname, $albs);
 		echo '</pre></td></tr>';
 	}

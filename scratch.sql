@@ -36,3 +36,86 @@ $BODY$
 	END
 $BODY$
   LANGUAGE 'plpgsql' VOLATILE;
+
+
+
+
+-- Function: array_search(integer[], integer)
+
+-- DROP FUNCTION array_search(integer[], integer);
+
+CREATE OR REPLACE FUNCTION array_search(arr integer[], what integer)
+  RETURNS boolean AS
+$BODY$
+	BEGIN
+		FOR i IN ARRAY_LOWER(arr,1)..ARRAY_UPPER(arr,1) LOOP
+			IF arr[i] =  what THEN
+				RETURN true;
+			END IF;
+		END LOOP;
+		RETURN false;
+	END
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;
+ALTER FUNCTION array_search(integer[], integer) OWNER TO postgres;
+
+
+
+-- Function: concat(text, text)
+
+-- DROP FUNCTION concat(text, text);
+
+CREATE OR REPLACE FUNCTION concat(text, text)
+  RETURNS text AS
+'select $1||$2'
+  LANGUAGE 'sql' IMMUTABLE STRICT;
+ALTER FUNCTION concat(text, text) OWNER TO postgres;
+
+
+
+-- Function: simple_cd_hash(integer[])
+
+-- DROP FUNCTION simple_cd_hash(integer[]);
+
+CREATE OR REPLACE FUNCTION simple_cd_hash(arr integer[])
+  RETURNS bigint AS
+$BODY$
+	DECLARE
+		ret BIGINT;
+		upper INTEGER;
+	BEGIN
+		upper = ARRAY_UPPER(arr,1);
+		IF (upper > 4) THEN
+			upper = 4;
+		END IF;
+		ret = 0;
+		FOR i IN ARRAY_LOWER(arr,1)..upper LOOP
+			ret = ret + (arr[i]/1000) * 600^(i-1);
+		END LOOP;
+		RETURN ret;
+	END
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;
+ALTER FUNCTION simple_cd_hash(integer[]) OWNER TO postgres;
+
+
+
+-- Function: sum_array(integer[])
+
+-- DROP FUNCTION sum_array(integer[]);
+
+CREATE OR REPLACE FUNCTION sum_array(arr integer[])
+  RETURNS integer AS
+$BODY$
+	DECLARE
+		ret INTEGER;
+	BEGIN
+		ret = 0;
+		FOR i IN ARRAY_LOWER(arr,1)..ARRAY_UPPER(arr,1) LOOP
+			ret = ret + arr[i];
+		END LOOP;
+		RETURN ret;
+	END
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;
+ALTER FUNCTION sum_array(integer[]) OWNER TO postgres;

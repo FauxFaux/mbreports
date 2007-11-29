@@ -1,4 +1,5 @@
 <?
+ini_set ('max-execution_time', '0' );
 require_once('database.inc.php');
 $ids = @$_REQUEST{'ids'};
 
@@ -17,10 +18,10 @@ else
 	$ids = array();
 	foreach ($ex as $a)
 		$ids[] = pg_escape_string((int)$a);
-	$query = " id in (" . implode(',', $ids) . ")";
+	$query = " track.id in (" . implode(',', $ids) . ")";
 }
 
-$res = pg_query("select id,gid from track where $query");
+$res = pg_query("select track.id,albumjoin.album as aid,gid,length from track join albumjoin on track.id=albumjoin.track where $query");
 
 while ($row = pg_fetch_assoc($res))
-	echo "{$row['id']} {$row['gid']}\n";
+	echo "{$row['id']}\t{$row['gid']}\t{$row['aid']}\t{$row['length']}\n";
