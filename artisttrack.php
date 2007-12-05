@@ -26,7 +26,7 @@ $res = pg_query("select
 		track.name asc,track.length asc,album.name asc,id asc
 ");
 
-echo "<tr><th colspan=\"3\">" . pg_num_rows($res) . " hits.</th></tr>";
+echo "<tr><th colspan=\"4\">" . pg_num_rows($res) . " hits.</th></tr>";
 
 function hrtime($t)
 {
@@ -47,7 +47,7 @@ while ($row = pg_fetch_assoc($res))
 	if ($row['name'] != $lastname)
 	{
 		$lastname = $row['name'];
-		echo "<tr><td style=\"border: none\" colspan=\"3\"><hr/></td></tr>";
+		echo "<tr><td style=\"border: none\" colspan=\"4\"><hr/></td></tr>";
 		++$uniq;
 	}
 	echo "<tr><td>" . hrtime($row['length']) . "</td>
@@ -56,7 +56,7 @@ while ($row = pg_fetch_assoc($res))
 		<td><a href=\"http://musicbrainz.org/show/release/?releaseid={$row['aid']}\">{$row['alname']}</a></td>";
 }
 
-echo "<tr><th colspan=\"3\">" . $uniq . " unique songs.</th></tr>";
+echo "<tr><th colspan=\"4\">" . $uniq . " unique songs.</th></tr>";
 
 ?>
 </table>
