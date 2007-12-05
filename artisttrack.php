@@ -14,7 +14,7 @@ $gid = pg_escape_string($regs[1]);
 echo '<table>';
 
 $res = pg_query("select
-		track.id,track.length,track.name,album.gid,album.name as alname
+		track.id,track.length,track.name,album,album.id as aid,album.name as alname
 	from
 		artist
 		join track on (track.artist = artist.id)
@@ -50,7 +50,10 @@ while ($row = pg_fetch_assoc($res))
 		echo "<tr><td style=\"border: none\" colspan=\"3\"><hr/></td></tr>";
 		++$uniq;
 	}
-	echo "<tr><td>" . hrtime($row['length']) . "</td><td><a href=\"http://musicbrainz.org/show/track?trackid={$row['id']}\">{$row['name']}</a></td><td><a href=\"http://musicbrainz.org/album/{$row['gid']}.html\">{$row['alname']}</a></td>";
+	echo "<tr><td>" . hrtime($row['length']) . "</td>
+		<td><a href=\"http://musicbrainz.org/edit/track/edit.html?trackid={$row['id']}&releaseid={$row['aid']}\">edit</a></td>
+		<td><a href=\"http://musicbrainz.org/show/track?trackid={$row['id']}\">{$row['name']}</a></td>
+		<td><a href=\"http://musicbrainz.org/show/release/?releaseid={$row['aid']}\">{$row['alname']}</a></td>";
 }
 
 echo "<tr><th colspan=\"3\">" . $uniq . " unique songs.</th></tr>";
