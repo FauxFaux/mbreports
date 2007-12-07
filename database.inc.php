@@ -24,17 +24,17 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'duplicatelive.php' => 'Possibly duplicate live releases',
 	'norgcase.php' => 'Possible violations of the silly Norwegian case-guide',
 	'earlycds.php' => 'CDs released before 1988',
-	'artisttrack.php' => 'Tracks by an artist',
+	'artisttrack.php' => 'Tracks by an artist: ',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
 
-function my_desc()
+function my_desc($suffix)
 {
 	global $desc;
-	return $desc[preg_replace('#^.*/#', '', $_SERVER['SCRIPT_NAME'])];
+	return $desc[preg_replace('#^.*/#', '', $_SERVER['SCRIPT_NAME'])] . ' ' . $suffix;
 }
 
-function my_title()
+function my_title($suffix = "")
 {
 	$age = pg_fetch_array(pg_query("select date_trunc('minute', now()-last_replication_date) from replication_control"));
 	?>
@@ -43,10 +43,10 @@ function my_title()
 	"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
 <html>
 <head>
-<title><?=my_desc()?></title>
+<title><?=my_desc($suffix)?></title>
 </head>
 <body>
-<h1><?=my_desc()?> (data age: <?=$age[0]?>)</h1>
+<h1><?=my_desc($suffix)?> (data age: <?=$age[0]?>)</h1>
 <?
 }
 
@@ -66,5 +66,5 @@ $formats = array(
 	10 => 'reel to reel',
 	11 => 'dat',
 	12 => 'digital',
-	13 => 'other',
+	13 => 'other'
 );

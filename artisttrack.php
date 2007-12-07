@@ -4,17 +4,29 @@
 </style>
 <?
 require_once('database.inc.php');
-my_title();
 
 if (!preg_match('/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/', $_SERVER{'QUERY_STRING'}, $regs))
 	die('<p>Please provide an artist gid (or url containing gid): <form method="get"><input length="36" style="width: 38em" type="text" name="pony" /><br />(or, if you\'re using a real browser): <input length="36" style="width: 100%" type="url" name="horse" /><br /><input type="submit" /></form></p>');
 
 $gid = pg_escape_string($regs[1]);
 
+$res = pg_query("select
+		artist.name
+	from
+		artist
+	where
+		artist.gid = '$gid'
+");
+
+$ar = pg_fetch_assoc($res);
+my_title($ar['name']);
+
 echo '<table>';
 
+
+
 $res = pg_query("select
-		track.id,track.length,track.name,album,album.id as aid,album.name as alname
+		track.id,track.length,track.name,track.modpending,album,album.id as aid,album.name as alname
 	from
 		artist
 		join track on (track.artist = artist.id)
@@ -50,7 +62,7 @@ while ($row = pg_fetch_assoc($res))
 		echo "<tr><td style=\"border: none\" colspan=\"4\"><hr/></td></tr>";
 		++$uniq;
 	}
-	echo "<tr><td>" . hrtime($row['length']) . "</td>
+	echo "<tr" . ($row['modpending'] ? ' class="dirty"' : '') . "><td>" . hrtime($row['length']) . "</td>
 		<td><a href=\"http://musicbrainz.org/edit/track/edit.html?trackid={$row['id']}&releaseid={$row['aid']}\">edit</a></td>
 		<td><a href=\"http://musicbrainz.org/show/track?trackid={$row['id']}\">{$row['name']}</a></td>
 		<td><a href=\"http://musicbrainz.org/show/release/?releaseid={$row['aid']}\">{$row['alname']}</a></td>";

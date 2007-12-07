@@ -18,6 +18,11 @@ span.modpending { border: 1px solid black }
 </head><body><iframe style="display: none" name="secret"></iframe>
 <?
 
+/** Bugs:
+		* "Just one"'s loads of releases unecessarily.
+		* Doesn't htmlentities enough stuff.
+*/
+
 ini_set('max_execution_time', 0);
 
 class Set
@@ -147,7 +152,8 @@ while ($row = pg_fetch_assoc($res))
 }
 
 $tranny = array();
-$res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or link_type = 2) and link0 in ($ids)");
+// Transl(iter)ated (15), remaster (3) or earliest release (2) are going to be ignored.
+$res = pg_query("select link0,link1 from l_album_album where (link_type = 15 or link_type = 2 or link_type = 3) and link0 in ($ids)");
 while ($row = pg_fetch_array($res))
 	$tranny[$row[0]] = $row[1];
 
