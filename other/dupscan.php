@@ -221,7 +221,7 @@ foreach ($collisions as $ind => $col)
 	}
 }
 
-$checks = array(
+$check_titles = array(
 	'identical_trli' => 'Identical track-lists',
 	'nosymbol_idetntical_trli' => 'Identical <abbr title="Symbols, case etc. ignored">normalised</abbr> track-lists',
 	'diff_lang' => 'Probable missing trans*ation ARs',
@@ -229,6 +229,20 @@ $checks = array(
 	'identical_albs' => 'Identical title/artist',
 	'other_albs' => 'Other pairs'
 );
+
+$minority = array(
+	'diff_lang',
+	'artist_disp',
+	'identical_albs',
+	'other_albs'
+);
+
+$checks = array(
+	'identical_trli' => $minority,
+	'nosymbol_idetntical_trli' => $minority,
+	$minority
+);
+
 
 ?>
 <h1>Guessed duplicate releases take 2!</h1>
@@ -248,8 +262,22 @@ $checks = array(
 <p><a name="index"></a><ul>
 <?
 
-foreach ($checks as $key => $title)
-	echo "<li><a href=\"#$key\">$title</a></li>\n";
+foreach ($checks as $major => $minor)
+{
+	$subkey = '';
+	if (is_string($major))
+	{
+		$subkey = $major;
+		echo '<li>' . $check_titles[$major] . ':<ul>';
+	}
+
+	foreach ($minor as $key)
+		echo "<li><a href=\"#{$subkey}_$key\">{$check_titles[$key]}</a></li>\n";
+
+	if (is_string($major))
+		echo '</ul></li>';
+}
+
 echo '<li><a href="#odd">Odd numbers</a></li></ul>';
 
 $prev = 0;
@@ -343,11 +371,11 @@ function other_albs($left, $right)
 	return true;
 }
 
-function seperate_by($f, array $arr)
+function seperate_by($f, array $arr, $g = false)
 {
 	$in = $out = array();
 	foreach ($arr as $left => $right)
-		if (call_user_func($f, $left, $right))
+		if (call_user_func($f, $left, $right) && (!$g || call_user_func($g, $left, $right)))
 			$in[$left] = $right;
 		else
 			$out[$left] = $right;
@@ -417,16 +445,28 @@ function buttons($left, $right)
 
 ksort($collisions);
 
-foreach ($checks as $func => $title)
+foreach ($checks as $major => $minor)
 {
-	list($collisions, $this_iter) = seperate_by($func, $collisions);
-	echo "<tr><th colspan=\"5\"><a name=\"$func\"/>$title (" . count($this_iter) . " total) <a href=\"#index\" title=\"Return to index\">^</a></th></tr>";
-	foreach ($this_iter as $left => $right)
+	$subkey = '';
+	$subtitle = '';
+	if (is_string($major))
 	{
-		// Ensure the longest are always on the same side, assist the browser slightly.
-		if (strlen(side($left)) > strlen(side($right)))
-			{ $t = $left; $left = $right; $right = $t; }
-		echo '<tr>' . side($left, true) . buttons($left, $right) . side($right) . "</tr>\n";
+		$subkey = $major;
+		$subtitle = $check_titles[$major] . ": ";
+	}
+
+	foreach ($minor as $key)
+	{
+		list($collisions, $this_iter) = seperate_by($key, $collisions, $subkey);
+		echo "<tr><th colspan=\"5\"><a name=\"{$subkey}_$key\"/>$subtitle{$check_titles[$key]} (" . count($this_iter) . " total) <a href=\"#index\" title=\"Return to index\">^</a></th></tr>";
+
+		foreach ($this_iter as $left => $right)
+		{
+			// Ensure the longest are always on the same side, assist the browser slightly.
+			if (strlen(side($left)) > strlen(side($right)))
+				{ $t = $left; $left = $right; $right = $t; }
+			echo '<tr>' . side($left, true) . buttons($left, $right) . side($right) . "</tr>\n";
+		}
 	}
 }
 
