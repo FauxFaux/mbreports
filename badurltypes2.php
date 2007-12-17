@@ -4,8 +4,13 @@ my_title();
 
 ini_set('max_execution_time', 180);
 $rules = array(
+// OR url ILIKE '%archive.org%'
 	'amazon asin' =>		"url NOT ILIKE 'http://%amazon.%/%/%/%'",
-	'cover art link' =>		"(url NOT ILIKE 'http://%archive.org/%' AND url NOT ILIKE 'http://%cdbaby.%/%' AND url NOT ILIKE 'http://%jamendo.%/album/%')",
+	'cover art link' =>		"(url NOT ILIKE 'http://%archive.org/%'
+		AND url NOT ILIKE 'http://%cdbaby.%/%'
+		AND url NOT ILIKE 'http://%jamendo.%/album/%'
+		AND url NOT ILIKE 'http://%ozon.ru/multimedia/audio_cd_covers/%'
+		AND url NOT ILIKE 'http://%.8bitpeoples.com/%')",
 	'IMDb' =>				"url NOT ILIKE 'http://%imdb.%/%'",
 	'musicmoz' =>			"url NOT ILIKE 'http://%musicmoz.org/%/%/%'",
 	'discogs' =>			"url NOT ILIKE 'http://%discogs.%/%'",

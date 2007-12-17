@@ -21,6 +21,7 @@ span.modpending { border: 1px solid black }
 /** Bugs:
 		* "Just one"'s loads of releases unecessarily.
 		* Doesn't htmlentities enough stuff.
+		* JustOnes should, in addition to not being broken, mention their other discs anyway.
 */
 
 ini_set('max_execution_time', 0);
