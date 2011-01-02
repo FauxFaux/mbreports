@@ -1,6 +1,6 @@
 <?php
 
-pg_connect('host=postaids user=postgres dbname=musicbrainz_db');
+pg_connect('host=127.0.0.1 user=postgres dbname=musicbrainz_db');
 
 $desc = array('artistnotype.php' => 'Artists with no type',
 	'barcodes999.php' => '13 digit barcodes starting with 99',
@@ -26,6 +26,10 @@ $desc = array('artistnotype.php' => 'Artists with no type',
 	'earlycds.php' => 'CDs released before 1988',
 	'soundtrackonlyartists.php' => 'Artists with a soundtrack release and suspiciously little else',
 	'artisttrack.php' => 'Tracks by an artist: ',
+	'ortracks.php' => 'Tracks with ` or ´ in the name',
+	'impmisslang.php' => 'Releases on <a href="http://faux.uwcs.co.uk/dupscan2.html">dupscan2</a> with missing language/script (haxed)',
+	'artistcomment.php' => 'Search in artist comments',
+	'collabartists.php' => 'Collaboration artists without proper attribution',
 	'emusicva2trackparse.php' => 'Paste eMusic VA to get something the trackparser doesn\'t sulk about'
 	);
 

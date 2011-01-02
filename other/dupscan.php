@@ -67,7 +67,7 @@ class Set
 	}
 };
 
-$req_acc = 100;
+$req_acc = 999;
 
 function breakup($thing)
 {
@@ -83,7 +83,7 @@ function equal(array $left, array $right)
 	return true;
 }
 
-require_once('../database.inc.php');
+require_once('/home/faux/mbreports/database.inc.php');
 
 //and not array_search(tracklist, 0)
 $res = pg_query('select distinct track_count from dupscan_cache where track_count > 4');
@@ -232,7 +232,6 @@ $check_titles = array(
 );
 
 $minority = array(
-	'diff_lang',
 	'artist_disp',
 	'identical_albs',
 	'other_albs'
@@ -241,6 +240,7 @@ $minority = array(
 $checks = array(
 	'identical_trli' => $minority,
 	'nosymbol_idetntical_trli' => $minority,
+	array('diff_lang'),
 	$minority
 );
 

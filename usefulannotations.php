@@ -20,9 +20,9 @@ text,releasedate,isocode as country,label,catno,barcode,format
 	where
 		annotation.type=2 and
 		label is null and
-		text like 'Label%'
+		text like '%Label%'
 		order by text
-	limit 5000");
+	");
 
 echo '<p>' . pg_num_rows($res) . ' shown.</p>';
 

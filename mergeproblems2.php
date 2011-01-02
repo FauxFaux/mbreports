@@ -6,7 +6,7 @@ if (isset($_GET{'regenerate'}))
 {
 	ignore_user_abort(true);
 	set_time_limit(0);
-	echo '<p>Regenerating... you may (but shouldn\'t) close the page.</p>' . "\n";
+	echo '<p>Regenerating... you may close the page.</p>' . "\n";
 	flush();
 	// Yeah, this is unbelievably awful. Trust me, I tried to get it to run in a sane time the other ways. Please, if you can, fix it.
 	pg_query("BEGIN;
@@ -69,6 +69,7 @@ my_title();
 	.dirtydupes { background-color: #fcc }
 	th,tr.dr td { border: 1px solid black; padding: .4em }
 	tr.hd td { border: 2px solid black; padding: 1em; font-weight: bold; font-size: 140% }
+	tr.missar td { border: 1px solid black; padding: 1em }
 </style>
 <?
 
@@ -199,10 +200,16 @@ function comparison($compare_to, $what, $key)
 	return comparisoni($compare_to[$key], $what[$key]);
 }
 
+function disc_link($what)
+{
+	global $skip;
+	return '<a href="http://musicbrainz.org/show/release/?releaseid=' . $what['id'] . '">' . substr($what['name'], $skip) . '</a>';
+}
+
 function line_for($compare_to, $what)
 {
 	global $skip;
-	echo '<tr class="dr"><td><a href="http://musicbrainz.org/show/release/?releaseid=' . $what['id'] . '">' . substr($what['name'], $skip) . '</a> ' .
+	echo '<tr class="dr"><td>' . disc_link($what) . ' ' .
 		(isset($what['track_count']) ? '(<abbr title="' . $what['track_count'] . ' tracks on this disc.">' . $what['track_count'] . '</abbr>)' : '') .
 		'</td>' .
 		'<td class="' . comparison($compare_to, $what, 'artist') . '</td>' .
@@ -261,17 +268,36 @@ foreach ($dat as $acname => $albs)
 		@$clean &= ($discs[$i] == 1);
 	}
 
+	$idssql = implode(',', array_keys($albs));
+
 	if (!$clean)
 	{
-		$tch = pg_query("SELECT album,COUNT(track) FROM albumjoin WHERE album IN (" . implode(',', array_keys($albs)) . ") GROUP BY album");
+		$tch = pg_query("SELECT album,COUNT(track) FROM albumjoin WHERE album IN ($idssql) GROUP BY album");
 		while ($row = pg_fetch_assoc($tch))
 			$albs[$row['album']]['track_count'] = $row['count'];
 	}
 
+	$fullalbs = $albs;
 	$first = array_shift($albs);
-
 	if (check_all_same($first, $albs))
+	{
+		$relsq = pg_query("SELECT link0,link1 from l_album_album WHERE link_type=17 AND (link0 IN ($idssql) OR link1 IN ($idssql))");
+		$rels = array();
+		while ($row = pg_fetch_assoc($relsq))
+			$rels[$row['link0']][] = $row['link1'];
+		$missing = array();
+		$kehs = array_keys($fullalbs);
+		for ($ind = 0; $ind < count($kehs)-1; ++$ind)
+			if (FALSE === @array_search($kehs[$ind+1], $rels[$kehs[$ind]]))
+				$missing[] = array('from' => $kehs[$ind], 'to' => $kehs[$ind+1]);
+		if (!count($missing))
+			continue;
+		echo "<tr><td colspan=\"$span\"></td></tr><tr class=\"hd\"><td colspan=\"$span\">$acname</td></tr><tr class=\"missar\"><td colspan=\"$span\">Missing ARs: <ul>";
+		foreach ($missing as $pair)
+			echo "<li>" . disc_link($fullalbs[$pair['from']]) . " to " . disc_link($fullalbs[$pair['to']]) . ". [ <a href=\"http://musicbrainz.org/edit/relationship/add.html?link0=album={$pair['from']}&link1=album={$pair['to']}&linktypeid=17\">create</a> ]</li>";
+		echo "</ul></td></tr>";
 		continue;
+	}
 
 	echo "<tr><td colspan=\"$span\">&nbsp;</td></tr><tr class=\"hd\"><td colspan=\"$span\"" . ($perfectdupes ? ' class="dirtydupes"' : (!$clean ? ' class="dirty"' : '')) . ">$acname</td></tr>\n";
 
